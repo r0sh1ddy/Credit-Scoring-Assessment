@@ -1,4 +1,4 @@
-Copy💳 CreditIQ — Credit Score Analysis & Prediction System
+Copy💳 CreditIQ - Credit Score Analysis & Prediction System
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" />
   <img src="https://img.shields.io/badge/Streamlit-1.32%2B-red?logo=streamlit" />
@@ -22,12 +22,12 @@ Methodology
 5.1 Exploratory Data Analysis
 5.2 Preprocessing Pipeline
 5.3 Feature Engineering & Selection
-5.4 Class Imbalance — SMOTE
+5.4 Class Imbalance - SMOTE
 5.5 Model Development
-5.6 Hyperparameter Optimisation — Optuna
+5.6 Hyperparameter Optimisation - Optuna
 5.7 Ensemble Methods & Model Stacking
 5.8 Model Evaluation Framework
-5.9 Explainability — SHAP
+5.9 Explainability - SHAP
 
 
 Results Summary
@@ -39,8 +39,8 @@ License
 
 
 1. Executive Summary
-Credit scoring is one of the most consequential applications of machine learning — it determines whether individuals obtain loans, mortgages, and financial products. This project builds a complete, production-ready credit risk classification system covering every stage from raw data to a deployed interactive application.
-The system classifies borrowers into three risk tiers — Poor, Standard, and Good — using 20 financial and behavioural features. It applies rigorous statistical preprocessing, trains and evaluates 11 models, uses ensemble stacking to maximise predictive power, and delivers predictions through a Streamlit application that provides a score gauge, risk radar, deviation analysis, SHAP explanations, and exportable PDF reports.
+Credit scoring is one of the most consequential applications of machine learning - it determines whether individuals obtain loans, mortgages, and financial products. This project builds a complete, production-ready credit risk classification system covering every stage from raw data to a deployed interactive application.
+The system classifies borrowers into three risk tiers - Poor, Standard, and Good - using 20 financial and behavioural features. It applies rigorous statistical preprocessing, trains and evaluates 11 models, uses ensemble stacking to maximise predictive power, and delivers predictions through a Streamlit application that provides a score gauge, risk radar, deviation analysis, SHAP explanations, and exportable PDF reports.
 Key outcomes:
 
 Best model (Stacking / XGBoost Tuned) achieves ROC-AUC > 0.98 and Accuracy > 93%
@@ -54,9 +54,9 @@ StakeholderHow They BenefitRetail Banks & LendersAutomate and standardise credit
 
 3. Data Source
 Primary Dataset
-Kaggle — Credit Score Classification by Rohan Paris
+Kaggle - Credit Score Classification by Rohan Paris
 🔗 https://www.kaggle.com/datasets/parisrohan/credit-score-classification
-PropertyDetailRows~100,000 (training set)Features28 raw columnsTargetCredit_Score — Poor / Standard / GoodLicenceCC0 Public DomainFormatCSV
+PropertyDetailRows~100,000 (training set)Features28 raw columnsTargetCredit_Score - Poor / Standard / GoodLicenceCC0 Public DomainFormatCSV
 Key features include: age, occupation, annual income, monthly salary, number of bank accounts, number of credit cards, interest rate, number of loans, payment delay metrics, outstanding debt, credit utilisation ratio, credit history length, credit mix, EMI amounts, and investment behaviour.
 Synthetic Fallback
 When the Kaggle file is unavailable, the system generates a statistically faithful synthetic dataset (10,000 rows) using numpy's log-normal and uniform distributions, preserving realistic skewness, missing value patterns (~5% per numeric column), and label proportions. The synthetic generator is seeded for reproducibility.
@@ -79,7 +79,7 @@ In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 │  1. Linearisation (log1p on 5 skewed features)                  │
 │  2. Re-binning  (Age · Income · Delay - ordinal buckets)        │
 │  3. Encoding    (LabelEncoder for 6 categorical columns)        │
-│  4. Imputation  (Median strategy — handles ~5% missing)         │
+│  4. Imputation  (Median strategy - handles ~5% missing)         │
 │  5. Normalisation (StandardScaler · compared vs MinMax/Robust)  │
 └────────────────────────────┬────────────────────────────────────┘
                              │
@@ -92,7 +92,7 @@ In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
-│                  IMBALANCE HANDLING — SMOTE                     │
+│                  IMBALANCE HANDLING - SMOTE                     │
 │  Applied to training data only (never test/validation)          │
 │  Balances Poor : Standard : Good - equal class representation   │
 └────────────────────────────┬────────────────────────────────────┘
@@ -110,7 +110,7 @@ In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 │                    EVALUATION & EXPLAINABILITY                  │
 │  Metrics: Accuracy · F1 Macro · Precision · Recall · ROC-AUC   │
 │           CV Score (5-fold) · Calibration · Learning Curves     │
-│  XAI:     SHAP TreeExplainer — summary + waterfall plots        │
+│  XAI:     SHAP TreeExplainer - summary + waterfall plots        │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -123,13 +123,13 @@ In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 5.1 Exploratory Data Analysis
 The EDA phase covers:
 
-Target distribution — Class counts and proportions (pie + bar). The dataset exhibits meaningful class imbalance (Poor ~27%, Standard ~48%, Good ~25% in synthetic; more severe in real data), motivating SMOTE.
-Missing value analysis — ~5% of numeric columns contain missing values. Visual heatmap and per-column rates reported.
-Skewness analysis — Features such as Annual_Income, Outstanding_Debt, Total_EMI_per_month exhibit right skewness (|skew| > 3), violating normality assumptions for linear models.
-Distribution plots — Per-class histograms for all numeric features revealing clear separation between Poor and Good for debt and delay features.
-Categorical analysis — Cross-tabulations of Credit_Mix and Payment_of_Min_Amount vs credit score class.
-Correlation matrix — Lower triangle heatmap identifying multicollinear feature pairs (e.g., Annual_Income / Monthly_Inhand_Salary).
-Box plots — Outlier visualisation per class for key features.
+Target distribution - Class counts and proportions (pie + bar). The dataset exhibits meaningful class imbalance (Poor ~27%, Standard ~48%, Good ~25% in synthetic; more severe in real data), motivating SMOTE.
+Missing value analysis - ~5% of numeric columns contain missing values. Visual heatmap and per-column rates reported.
+Skewness analysis - Features such as Annual_Income, Outstanding_Debt, Total_EMI_per_month exhibit right skewness (|skew| > 3), violating normality assumptions for linear models.
+Distribution plots - Per-class histograms for all numeric features revealing clear separation between Poor and Good for debt and delay features.
+Categorical analysis - Cross-tabulations of Credit_Mix and Payment_of_Min_Amount vs credit score class.
+Correlation matrix - Lower triangle heatmap identifying multicollinear feature pairs (e.g., Annual_Income / Monthly_Inhand_Salary).
+Box plots - Outlier visualisation per class for key features.
 
 5.2 Preprocessing Pipeline
 Linearisation (Log Transform)
@@ -153,12 +153,12 @@ Engineered Features (7 new features)
 FeatureFormulaRationaleDebt_to_IncomeOutstanding_Debt / Annual_IncomePrimary debt serviceability indicatorEMI_to_IncomeTotal_EMI / Monthly_SalaryMonthly payment burdenDelayed_per_LoanDelayed_Payments / Num_LoansNormalised delinquency rateInvestment_to_IncomeMonthly_Inv / Monthly_SalarySavings disciplineCards_per_AccountNum_Cards / Num_AccountsCredit densityUtil_x_DelayUtilisation × Delay_daysCombined stress indicatorDebt_x_InquiriesOutstanding_Debt × InquiriesRisk amplification signal
 Feature Selection (3-stage pipeline)
 
-Mutual Information (mutual_info_classif) — ranks features by non-linear dependency with the target. Bottom 35th percentile removed.
-Random Forest Feature Importance — removes features below mean importance threshold.
-RFECV (Recursive Feature Elimination with Cross-Validation) — iteratively removes the least important feature and selects the count that maximises 3-fold CV F1 Macro score. min_features_to_select=8 enforces a practical minimum.
+Mutual Information (mutual_info_classif) - ranks features by non-linear dependency with the target. Bottom 35th percentile removed.
+Random Forest Feature Importance - removes features below mean importance threshold.
+RFECV (Recursive Feature Elimination with Cross-Validation) - iteratively removes the least important feature and selects the count that maximises 3-fold CV F1 Macro score. min_features_to_select=8 enforces a practical minimum.
 
 RFECV is the final arbiter. The CV score curve is plotted to show the optimal feature count plateau.
-5.4 Class Imbalance — SMOTE
+5.4 Class Imbalance - SMOTE
 SMOTE (Synthetic Minority Over-sampling Technique) generates synthetic samples for minority classes by interpolating between existing minority-class nearest neighbours.
 Critical implementation note: SMOTE is applied only to the training split after the train/test split. Applying SMOTE before splitting would leak synthetic test samples into training, artificially inflating reported performance.
 Before SMOTE (train): Poor=2,161 · Standard=3,853 · Good=386
@@ -168,7 +168,7 @@ Impact: Improves Good-class F1 from ~0.71 - ~0.93, reduces Poor-class false nega
 Nine base classifiers are trained on the SMOTE-augmented, RFECV-selected training data:
 ModelTypeKey CharacteristicsLogistic RegressionLinearBaseline; interpretable; fastRandom ForestBagging ensembleRobust to noise; parallel treesExtra TreesBagging ensembleRandomised splits; lower varianceGradient BoostingBoostingSequential error correctionXGBoost (tuned)BoostingRegularised; Optuna-tunedLightGBMBoostingLeaf-wise growth; fast on large dataNaive BayesProbabilisticAssumes feature independenceKNN (k=9)Instance-basedNon-parametric; distance-basedSVM (RBF)Margin-basedEffective in high dimensions
 All models are evaluated with 5-fold stratified cross-validation on the SMOTE training set and held-out test set performance.
-5.6 Hyperparameter Optimisation — Optuna
+5.6 Hyperparameter Optimisation - Optuna
 Optuna with the Tree-structured Parzen Estimator (TPE) sampler optimises XGBoost across 8 hyperparameters:
 n_estimators     [100, 400]
 max_depth        [3, 9]
@@ -197,18 +197,18 @@ All models are evaluated on a held-out 20% stratified test set (no SMOTE applied
 MetricWhy It MattersAccuracyOverall correctnessF1 MacroBalanced performance across all 3 classesPrecision MacroCorrectness of positive predictionsRecall MacroCoverage of true positive casesROC-AUC (OvR Macro)Discrimination ability across all class pairs; primary ranking metricCV AUC ± StdGeneralisation stability (5-fold on SMOTE train)
 Additional diagnostics:
 
-Confusion matrices — visualise class-level error patterns
-Per-class ROC curves — one-vs-rest AUC for Poor, Standard, Good
-Calibration curves — reliability of predicted probabilities (ECE / reliability diagram)
-Learning curves — bias-variance diagnosis as training set size grows
+Confusion matrices - visualise class-level error patterns
+Per-class ROC curves - one-vs-rest AUC for Poor, Standard, Good
+Calibration curves - reliability of predicted probabilities (ECE / reliability diagram)
+Learning curves - bias-variance diagnosis as training set size grows
 
-5.9 Explainability — SHAP
+5.9 Explainability - SHAP
 shap.TreeExplainer is used to compute Shapley values for tree-based models (XGBoost, LightGBM).
 
-Summary dot plot — shows feature importance and direction of effect per class
-Mean |SHAP| bar chart — global feature ranking across all three classes
-Waterfall plot — individual prediction explanation: which features pushed the score up or down
-Radar chart — six composite risk dimensions (Payment History, Debt Management, Credit History, Credit Mix, Credit Activity, Savings & Income) synthesised from raw features for intuitive user feedback
+Summary dot plot - shows feature importance and direction of effect per class
+Mean |SHAP| bar chart - global feature ranking across all three classes
+Waterfall plot - individual prediction explanation: which features pushed the score up or down
+Radar chart - six composite risk dimensions (Payment History, Debt Management, Credit History, Credit Mix, Credit Activity, Savings & Income) synthesised from raw features for intuitive user feedback
 
 Consistent top predictors across all methods:
 
@@ -227,7 +227,7 @@ Results on synthetic dataset. Real Kaggle data may vary.
 
 7. Deliverables
 DeliverableFileDescriptionAnalysis Notebookcredit_score_analysis.ipynb50-cell Jupyter notebook covering all pipeline stages with inline visualisationsStreamlit Appapp.pyProduction-grade 4-page app with auth, upload, predict, PDF exportPipeline Modulepipeline.pyStandalone importable ML pipeline for programmatic useRequirementsrequirements.txtPinned dependency listREADMEREADME.mdThis document
-Streamlit App — Feature Summary
+Streamlit App - Feature Summary
 PageFeatures🏠 OverviewKPI cards, class distribution donut, SMOTE before/after, model leaderboard, pipeline summary, data preview📊 EDAInteractive feature selector, skewness before/after log-transform, categorical cross-tabs, correlation heatmap, missing value chart🤖 ModelsFull metrics table, all confusion matrices, ROC curves (top 5), calibration curves, Optuna trial history, hyperparameter importance, RFECV curve, SHAP summary🔮 Predict20-input form, live prediction badge, FICO-style score gauge (300–850), risk radar (6 dimensions), deviation-from-Good-profile bar chart, SHAP waterfall, personalised insights, PDF export
 
 8. Deployment Guide
@@ -251,15 +251,15 @@ Streamlit Community Cloud (Free Hosting)
 Push this repository to GitHub (already at git@github.com:r0sh1ddy/Credit-Scoring-Assessment.git)
 Go to share.streamlit.io - New app
 Set Repository - r0sh1ddy/Credit-Scoring-Assessment, Branch - main, Main file - app.py
-Click Deploy — the app is publicly accessible within ~2 minutes ✅
+Click Deploy - the app is publicly accessible within ~2 minutes ✅
 
 Using the Real Kaggle Dataset
-python# In the notebook — Section 1, Option B:
+python# In the notebook - Section 1, Option B:
 df_raw = pd.read_csv("train.csv")
 df_raw["Credit_Score"] = df_raw["Credit_Score"].map({"Poor":0,"Standard":1,"Good":2})
 
-# In the Streamlit app — sidebar Upload widget:
-# Upload train.csv directly — the app handles column mapping automatically
+# In the Streamlit app - sidebar Upload widget:
+# Upload train.csv directly - the app handles column mapping automatically
 
 9. Project Structure
 Credit-Scoring-Assessment/
@@ -290,7 +290,7 @@ Install all at once:
 bashpip install -r requirements.txt
 
 11. License
-MIT License — free to use, modify, and distribute with attribution.
+MIT License - free to use, modify, and distribute with attribution.
 
 <p align="center">
   Built with ❤️ · XGBoost · LightGBM · SMOTE · RFECV · Optuna · SHAP · Streamlit

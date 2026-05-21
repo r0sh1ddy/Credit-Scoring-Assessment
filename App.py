@@ -1,6 +1,6 @@
 
 """
-CreditIQ — Production Streamlit App
+CreditIQ - Production Streamlit App
 Features: Auth · CSV Upload · Linearisation · Normalisation · Re-binning ·
           RFECV · SMOTE · Optuna · 9 Models · Voting · Stacking ·
           Gauge · Radar · Deviation · SHAP Waterfall · PDF Export
@@ -482,7 +482,7 @@ def shap_waterfall(mdl, x_single, feat_names, cls_idx):
         fig = go.Figure(go.Bar(x=top.values, y=top.index, orientation="h",
             marker_color=["#ef4444" if v<0 else "#22c55e" for v in top.values]))
         fig.add_vline(x=0, line_color="#888", line_width=1)
-        fig.update_layout(title=f"SHAP — Why '{CLASS_NAMES[cls_idx]}'?",
+        fig.update_layout(title=f"SHAP - Why '{CLASS_NAMES[cls_idx]}'?",
             xaxis_title="SHAP value", paper_bgcolor=CARD_BG, plot_bgcolor=CARD_BG,
             font=dict(color="#e8e8e8"), xaxis=dict(gridcolor=BORDER),
             yaxis=dict(gridcolor=BORDER), height=360, margin=dict(l=10,r=10,t=50,b=30))
@@ -532,7 +532,7 @@ def build_pdf(inputs, score, lo, hi, label, proba, tips, radar_sc, user_fe, good
     # header
     pdf.set_fill_color(15,17,23); pdf.rect(0,0,210,38,"F")
     pdf.set_text_color(255,255,255); pdf.set_font("Helvetica","B",20)
-    pdf.cell(0,16,"CreditIQ — Credit Score Report",ln=True,align="C")
+    pdf.cell(0,16,"CreditIQ - Credit Score Report",ln=True,align="C")
     pdf.set_font("Helvetica","",9); pdf.set_text_color(160,160,160)
     pdf.cell(0,7,f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  "
                f"Model: Stacking / XGBoost Tuned",ln=True,align="C")
@@ -580,7 +580,7 @@ def build_pdf(inputs, score, lo, hi, label, proba, tips, radar_sc, user_fe, good
         pdf.multi_cell(0,5,clean)
     # footer
     pdf.set_y(-16); pdf.set_font("Helvetica","I",7); pdf.set_text_color(160,160,160)
-    pdf.cell(0,5,"CreditIQ — For analytical purposes only. Not financial advice.",align="C")
+    pdf.cell(0,5,"CreditIQ - For analytical purposes only. Not financial advice.",align="C")
     out = io.BytesIO(); pdf.output(out); out.seek(0); return out
  
  
@@ -590,8 +590,8 @@ def build_pdf(inputs, score, lo, hi, label, proba, tips, radar_sc, user_fe, good
 def sidebar():
     with st.sidebar:
         st.markdown("## 💳 CreditIQ")
-        st.caption(f"**{st.session_state.get('user_name','—')}** "
-                   f"({st.session_state.get('user_role','—')})")
+        st.caption(f"**{st.session_state.get('user_name','-')}** "
+                   f"({st.session_state.get('user_role','-')})")
         st.markdown("---")
         page = st.radio("Navigate",
             ["🏠 Overview","📊 EDA","🤖 Models","🔮 Predict Score"],
@@ -712,7 +712,7 @@ def page_eda(df):
             plt.tight_layout(); st.pyplot(fig); plt.close()
  
     with t2:
-        st.subheader("Skewness — Before vs After Log Transform")
+        st.subheader("Skewness - Before vs After Log Transform")
         skew_df = df[num_cols].skew().sort_values(ascending=False)
         log_df  = df[num_cols].copy()
         for c in LOG_FEATS:
@@ -778,7 +778,7 @@ def page_models(pipe):
          "Calibration","Optuna Study","RFECV & SHAP"])
  
     with t1:
-        st.subheader("All Models — Full Metrics")
+        st.subheader("All Models - Full Metrics")
         lb = pd.DataFrame({n:{"Accuracy":round(v["accuracy"],4),"F1 Macro":round(v["f1"],4),
              "Precision":round(v["precision"],4),"Recall":round(v["recall"],4),
              "ROC-AUC":round(v["roc_auc"],4),
@@ -804,14 +804,14 @@ def page_models(pipe):
         fig2,ax2 = plt.subplots(figsize=(6,5),facecolor=DARK_BG)
         ax2.set_facecolor(CARD_BG)
         ConfusionMatrixDisplay(cm,display_labels=CLASS_NAMES).plot(ax=ax2,colorbar=False,cmap="Blues")
-        ax2.set_title(f"{mc} — Acc: {res[mc]['accuracy']:.3f}",color="#e8e8e8")
+        ax2.set_title(f"{mc} - Acc: {res[mc]['accuracy']:.3f}",color="#e8e8e8")
         ax2.tick_params(colors="#888")
         for sp in ax2.spines.values(): sp.set_edgecolor(BORDER)
         plt.tight_layout(); st.pyplot(fig2); plt.close()
         st.code(classification_report(pipe["y_te"],res[mc]["preds"],target_names=CLASS_NAMES))
  
     with t3:
-        st.subheader(f"ROC Curves — {bn}")
+        st.subheader(f"ROC Curves - {bn}")
         ybin = label_binarize(pipe["y_te"], classes=[0,1,2])
         fig3 = go.Figure()
         top5 = list(pd.DataFrame({n:{"auc":v["roc_auc"]} for n,v in res.items()}).T.sort_values("auc",ascending=False).head(5).index)
@@ -830,7 +830,7 @@ def page_models(pipe):
         st.plotly_chart(fig3, use_container_width=True)
  
     with t4:
-        st.subheader(f"Calibration Curves — {bn}")
+        st.subheader(f"Calibration Curves - {bn}")
         ybin2 = label_binarize(pipe["y_te"],classes=[0,1,2])
         fig4,axes4 = plt.subplots(1,3,figsize=(15,5),facecolor=DARK_BG)
         for i,(ax,cn) in enumerate(zip(axes4,CLASS_NAMES)):
@@ -840,7 +840,7 @@ def page_models(pipe):
             ax.plot([0,1],[0,1],"k--",label="Perfect"); ax.legend(fontsize=7)
             ax.set_title(f"Class: {cn}",color="#e8e8e8"); ax.tick_params(colors="#888")
             for sp in ax.spines.values(): sp.set_edgecolor(BORDER)
-        plt.suptitle(f"Calibration — {bn}",color="#e8e8e8")
+        plt.suptitle(f"Calibration - {bn}",color="#e8e8e8")
         plt.tight_layout(); st.pyplot(fig4); plt.close()
  
     with t5:
@@ -905,7 +905,7 @@ def page_models(pipe):
                     fig8,ax8=plt.subplots(figsize=(9,5),facecolor=DARK_BG)
                     ax8.set_facecolor(DARK_BG); plt.sca(ax8)
                     shap.summary_plot(sv,Xdf,plot_type="dot",max_display=14,show=False,color_bar=True)
-                    ax8.set_title(f"SHAP — {cls_c}",color="#e8e8e8"); ax8.tick_params(colors="#888")
+                    ax8.set_title(f"SHAP - {cls_c}",color="#e8e8e8"); ax8.tick_params(colors="#888")
                     plt.tight_layout(); st.pyplot(fig8); plt.close()
                 except Exception as e:
                     st.warning(f"SHAP unavailable: {e}")
@@ -1031,7 +1031,7 @@ def page_predict(pipe):
         🟢 Green = closer to <b>Good</b> class average &nbsp;|&nbsp;
         🔴 Red = further from <b>Good</b> class average</div>""", unsafe_allow_html=True)
     with d2:
-        st.markdown("### SHAP — Why this prediction?")
+        st.markdown("### SHAP - Why this prediction?")
         xgb_mdl = pipe["base"].get("XGBoost (tuned)", pipe["base"].get("LightGBM"))
         wfig = shap_waterfall(xgb_mdl, raw_final, sel, pred)
         if wfig: st.plotly_chart(wfig, use_container_width=True)
@@ -1042,23 +1042,23 @@ def page_predict(pipe):
     st.markdown("### 💡 Personalised Insights")
     tips = []
     if dfd > 20:
-        tips.append("⚠️ **High payment delays** — paying on or before due date is the single biggest positive action.")
+        tips.append("⚠️ **High payment delays** - paying on or before due date is the single biggest positive action.")
     if od/(ai+1) > 0.3:
-        tips.append("⚠️ **Elevated debt-to-income ratio** — reducing outstanding debt will directly improve your score.")
+        tips.append("⚠️ **Elevated debt-to-income ratio** - reducing outstanding debt will directly improve your score.")
     if cu > 40:
-        tips.append("⚠️ **Credit utilisation above 40%** — aim to keep it below 30% of your credit limit.")
+        tips.append("⚠️ **Credit utilisation above 40%** - aim to keep it below 30% of your credit limit.")
     if cha < 3:
-        tips.append("💡 **Short credit history** — maintaining existing accounts for longer builds a stronger track record.")
+        tips.append("💡 **Short credit history** - maintaining existing accounts for longer builds a stronger track record.")
     if cm == "Bad":
-        tips.append("💡 **Poor credit mix** — having a diverse combination of credit types signals lower risk to lenders.")
+        tips.append("💡 **Poor credit mix** - having a diverse combination of credit types signals lower risk to lenders.")
     if ndp > 10:
-        tips.append("⚠️ **Many delayed payments on record** — set up automatic payments to prevent future delays.")
+        tips.append("⚠️ **Many delayed payments on record** - set up automatic payments to prevent future delays.")
     if nci > 8:
-        tips.append("⚠️ **High credit inquiry count** — multiple recent inquiries signal credit-seeking behaviour to lenders.")
+        tips.append("⚠️ **High credit inquiry count** - multiple recent inquiries signal credit-seeking behaviour to lenders.")
     if score >= hi:
-        tips.append(f"✅ **Above expected range ({lo}–{hi}) for your income bracket** — excellent financial discipline!")
+        tips.append(f"✅ **Above expected range ({lo}–{hi}) for your income bracket** - excellent financial discipline!")
     elif score < lo:
-        tips.append(f"💡 **Below expected range ({lo}–{hi}) for your income bracket** — focus on the items flagged above.")
+        tips.append(f"💡 **Below expected range ({lo}–{hi}) for your income bracket** - focus on the items flagged above.")
     if not tips:
         tips.append("✅ Your credit profile looks strong. Maintain consistent payment habits to stay here.")
  
@@ -1090,7 +1090,7 @@ def main():
     key  = hashlib.md5(str(df.shape).encode() + str(df.iloc[0].values).encode()).hexdigest()
     n_t  = st.session_state.get("n_trials", 25)
  
-    with st.spinner("🔧 Running ML pipeline — SMOTE · RFECV · Optuna · 11 models (cached after first run)…"):
+    with st.spinner("🔧 Running ML pipeline - SMOTE · RFECV · Optuna · 11 models (cached after first run)…"):
         pipe = run_pipeline(df, key, n_t)
  
     if   page == "🏠 Overview":      page_overview(df, pipe)
