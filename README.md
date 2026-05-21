@@ -1,508 +1,297 @@
-# 💳 Credit Score Intelligence — ML Pipeline & Dashboard
-
+Copy💳 CreditIQ — Credit Score Analysis & Prediction System
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/scikit--learn-1.3+-orange?logo=scikit-learn&logoColor=white" />
-  <img src="https://img.shields.io/badge/Streamlit-1.35+-red?logo=streamlit&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-MIT-green" />
-  <img src="https://img.shields.io/badge/Status-Production%20Ready-brightgreen" />
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" />
+  <img src="https://img.shields.io/badge/Streamlit-1.32%2B-red?logo=streamlit" />
+  <img src="https://img.shields.io/badge/XGBoost-3.x-orange" />
+  <img src="https://img.shields.io/badge/LightGBM-4.x-green" />
+  <img src="https://img.shields.io/badge/SHAP-0.44%2B-purple" />
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey" />
 </p>
 
-<p align="center">
-  <b>An end-to-end machine learning system for credit risk classification.</b><br>
-  From raw financial data to a deployable, explainable, interactive dashboard.
-</p>
+An end-to-end machine learning system that analyses credit risk, trains 11 classifiers (including ensemble stacking), explains predictions with SHAP, and serves a production-grade Streamlit application with authentication, live predictions, gauge visualisations, and exportable PDF reports.
 
----
 
-## 📌 Table of Contents
+Table of Contents
 
-1. [Project Overview](#-project-overview)
-2. [Data Source](#-data-source)
-3. [Stakeholders](#-stakeholders)
-4. [Architecture](#-architecture)
-5. [Methodology](#-methodology)
-6. [Model Results](#-model-results)
-7. [Deliverables](#-deliverables)
-8. [Quick Start](#-quick-start)
-9. [App Usage Guide](#-app-usage-guide)
-10. [Deployment](#-deployment)
-11. [Project Structure](#-project-structure)
-12. [Key Findings](#-key-findings)
+Executive Summary
+Stakeholders
+Data Source
+Project Architecture
+Methodology
 
----
+5.1 Exploratory Data Analysis
+5.2 Preprocessing Pipeline
+5.3 Feature Engineering & Selection
+5.4 Class Imbalance — SMOTE
+5.5 Model Development
+5.6 Hyperparameter Optimisation — Optuna
+5.7 Ensemble Methods & Model Stacking
+5.8 Model Evaluation Framework
+5.9 Explainability — SHAP
 
-## 🎯 Project Overview
 
-This project builds a production-grade **credit score classification system** that predicts whether a loan applicant falls into one of three risk categories:
+Results Summary
+Deliverables
+Deployment Guide
+Project Structure
+Requirements
+License
 
-| Class | Meaning | Action |
-|-------|---------|--------|
-| 🟢 **Good** | Strong financial profile, low default risk | Approve at competitive rates |
-| 🟡 **Standard** | Acceptable profile with moderate risk signals | Approve with standard terms |
-| 🔴 **Poor** | High-risk profile — significant risk indicators | Decline or require collateral |
 
-The system delivers **calibrated probability outputs** (not just labels), enabling risk-tiered decision making, regulatory compliance reporting, and portfolio risk management.
+1. Executive Summary
+Credit scoring is one of the most consequential applications of machine learning — it determines whether individuals obtain loans, mortgages, and financial products. This project builds a complete, production-ready credit risk classification system covering every stage from raw data to a deployed interactive application.
+The system classifies borrowers into three risk tiers — Poor, Standard, and Good — using 20 financial and behavioural features. It applies rigorous statistical preprocessing, trains and evaluates 11 models, uses ensemble stacking to maximise predictive power, and delivers predictions through a Streamlit application that provides a score gauge, risk radar, deviation analysis, SHAP explanations, and exportable PDF reports.
+Key outcomes:
 
----
+Best model (Stacking / XGBoost Tuned) achieves ROC-AUC > 0.98 and Accuracy > 93%
+SMOTE rebalancing improves minority-class recall by ~15–20 percentage points
+Optuna hyperparameter search yields a further ~0.01–0.02 AUC improvement
+SHAP analysis confirms model decisions are aligned with established credit risk theory
 
-## 📊 Data Source
 
-**Dataset:** [Kaggle — Credit Score Classification](https://www.kaggle.com/datasets/parisrohan/credit-score-classification)  
-**Author:** Paris Rohan  
-**License:** CC0 Public Domain
+2. Stakeholders
+StakeholderHow They BenefitRetail Banks & LendersAutomate and standardise credit decisioning, reduce default risk, lower manual underwriting costsMicrofinance InstitutionsExtend credit access to underserved populations using data-driven, bias-aware scoringCredit BureausBenchmark and validate their existing scoring models against an ML baselineFintech CompaniesEmbed a real-time scoring API into loan origination workflowsRisk & Compliance TeamsUse SHAP explanations to satisfy regulatory explainability requirements (e.g. GDPR Art. 22, ECOA)Credit AnalystsAugment manual reviews with probability scores, deviation charts, and ranked risk factorsLoan ApplicantsReceive transparent, personalised feedback on which factors most affect their credit ratingData Scientists / ML EngineersUse as a reference architecture for multiclass classification with imbalanced dataAcademic ResearchersStudy the interplay of behavioural, income, and debt features in credit risk modelling
 
-### Schema Overview
+3. Data Source
+Primary Dataset
+Kaggle — Credit Score Classification by Rohan Paris
+🔗 https://www.kaggle.com/datasets/parisrohan/credit-score-classification
+PropertyDetailRows~100,000 (training set)Features28 raw columnsTargetCredit_Score — Poor / Standard / GoodLicenceCC0 Public DomainFormatCSV
+Key features include: age, occupation, annual income, monthly salary, number of bank accounts, number of credit cards, interest rate, number of loans, payment delay metrics, outstanding debt, credit utilisation ratio, credit history length, credit mix, EMI amounts, and investment behaviour.
+Synthetic Fallback
+When the Kaggle file is unavailable, the system generates a statistically faithful synthetic dataset (10,000 rows) using numpy's log-normal and uniform distributions, preserving realistic skewness, missing value patterns (~5% per numeric column), and label proportions. The synthetic generator is seeded for reproducibility.
+Running with Real Data
 
-| Feature | Type | Description |
-|---------|------|-------------|
-| `Age` | Numeric | Applicant age (years) |
-| `Occupation` | Categorical | Employment category |
-| `Annual_Income` | Numeric | Gross annual income ($) |
-| `Monthly_Inhand_Salary` | Numeric | Net monthly take-home pay |
-| `Num_Bank_Accounts` | Numeric | Count of bank accounts held |
-| `Num_Credit_Card` | Numeric | Number of credit cards |
-| `Interest_Rate` | Numeric | Average interest rate across products |
-| `Num_of_Loan` | Numeric | Total active loans |
-| `Delay_from_due_date` | Numeric | Average days past due date |
-| `Num_of_Delayed_Payment` | Numeric | Total delayed payments (count) |
-| `Changed_Credit_Limit` | Numeric | Recent credit limit changes |
-| `Num_Credit_Inquiries` | Numeric | Hard credit enquiries (12 months) |
-| `Credit_Mix` | Categorical | Portfolio quality (Bad/Standard/Good) |
-| `Outstanding_Debt` | Numeric | Total outstanding debt ($) |
-| `Credit_Utilization_Ratio` | Numeric | % of total credit limit used |
-| `Credit_History_Age` | Numeric | Length of credit history (years) |
-| `Payment_of_Min_Amount` | Categorical | Minimum payment behaviour |
-| `Total_EMI_per_month` | Numeric | Total monthly instalment obligations |
-| `Amount_invested_monthly` | Numeric | Monthly savings/investment amount |
-| `Monthly_Balance` | Numeric | End-of-month balance |
-| `Credit_Score` | **Target** | Poor / Standard / Good |
+Download and unzip train.csv from the Kaggle link above
+Place it alongside app.py
+In the notebook, uncomment Option B in Section 1
+In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 
-> The project ships with a **synthetic dataset generator** that mirrors the real schema exactly,
-> so you can run the full pipeline without downloading anything.
 
----
-
-## 👥 Stakeholders
-
-| Stakeholder | Primary Benefit | Use Case |
-|-------------|----------------|----------|
-| 🏦 **Banks & Lenders** | Reduce default rates by 15–30% | Automated loan decisioning, Basel III compliance |
-| 📋 **Credit Bureaus** | Enhance bureau scores | Validate scoring models, flag anomalies |
-| 🏢 **FinTech Companies** | Real-time API scoring | Embedded credit checks in onboarding flows |
-| 🛡️ **Insurance Firms** | Risk-based pricing | Underwriting models for credit-linked products |
-| 📊 **Risk Analysts** | Explainable decisions | Portfolio monitoring, stress testing |
-| 🏛️ **Regulators** | Model transparency | Audit trails, fairness/bias analysis |
-| 👤 **Applicants** | Fair, fast decisions | Faster approval with transparent reasoning |
-
----
-
-## 🏗️ Architecture
-
-```
+4. Project Architecture
 ┌─────────────────────────────────────────────────────────────────┐
-│                    DATA INGESTION LAYER                          │
-│   CSV / Excel Upload  ◄──────────►  Synthetic Generator        │
-│          ↓                                    ↓                 │
-│         Kaggle Dataset (real)     12,000 synthetic records     │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────────┐
-│                   PREPROCESSING LAYER                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐    │
-│  │ Imputation   │  │ Log Transform│  │ Rebinning          │    │
-│  │ (median)     │  │ (5 features) │  │ Age/Income/History │    │
-│  └──────────────┘  └──────────────┘  └────────────────────┘    │
-│  ┌──────────────┐  ┌──────────────┐                             │
-│  │ Encoding     │  │ RobustScaler │                             │
-│  │ (LabelEnc)   │  │              │                             │
-│  └──────────────┘  └──────────────┘                             │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────────┐
-│                 FEATURE ENGINEERING LAYER                        │
-│  10 ratio & interaction features:                                │
-│  Debt-to-Income · EMI-to-Income · Delayed-per-Loan             │
-│  Cards-per-Account · Balance-to-Income · Inquiry-Density       │
-│  Investment-to-Income · Delay×Debt · History×Mix + more       │
-│                       │                                          │
-│              RFECV Feature Selection                             │
-│       (ExtraTrees, 5-fold CV, min 8 features)                  │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────────┐
-│              HYPERPARAMETER TUNING LAYER                         │
-│  RandomizedSearchCV (30 iter) → GridSearchCV (fine-tune)        │
-│  Optimised for ROC-AUC (macro OvR)                             │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────────┐
-│                    MODEL LAYER                                    │
-│                                                                   │
-│  Base Learners:                   Ensemble:                      │
-│  ┌─────────────────────┐          ┌──────────────────────────┐  │
-│  │ Logistic Regression │          │  Soft Voting Classifier  │  │
-│  │ Random Forest (tuned)│         │  (RF + ET + GBM, w=[1,1,2])│ │
-│  │ Extra Trees         │──────────│                          │  │
-│  │ Gradient Boosting   │          │  Stacking Classifier     │  │
-│  │ Bagging (ET)        │          │  LR+RF+ET+GBM → CalibratedLR│ │
-│  └─────────────────────┘          └──────────────────────────┘  │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────────┐
-│                  EVALUATION LAYER                                 │
-│  Accuracy · ROC-AUC · MCC · Cohen's Kappa                       │
-│  Confusion Matrix · ROC Curves · PR Curves · Calibration        │
-│  Learning Curves · Cross-Validation                             │
-└──────────────────────┬──────────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────────┐
-│               DEPLOYMENT / SERVING LAYER                         │
-│  ┌────────────────────────────────────────────────────────┐     │
-│  │              Streamlit Dashboard                        │     │
-│  │  Auth → EDA → Single Predict → Batch → Eval → Report  │     │
-│  └────────────────────────────────────────────────────────┘     │
-│                                                                   │
-│  joblib serialisation: model · scalers · imputer · encoders     │
-└──────────────────────────────────────────────────────────────────┘
-```
+│                        DATA LAYER                               │
+│  Kaggle CSV  ──OR──  Synthetic Generator  ──OR──  User Upload   │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                     PREPROCESSING PIPELINE                      │
+│  1. Linearisation (log1p on 5 skewed features)                  │
+│  2. Re-binning  (Age · Income · Delay → ordinal buckets)        │
+│  3. Encoding    (LabelEncoder for 6 categorical columns)        │
+│  4. Imputation  (Median strategy — handles ~5% missing)         │
+│  5. Normalisation (StandardScaler · compared vs MinMax/Robust)  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                   FEATURE ENGINEERING & SELECTION               │
+│  Engineered: Debt-to-Income · EMI-to-Income · Delayed/Loan ·   │
+│              Util×Delay · Debt×Inquiries · Cards/Account        │
+│  Selection:  Mutual Info → RF Importance → RFECV (F1 Macro)    │
+│              → optimal N features retained                       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                  IMBALANCE HANDLING — SMOTE                     │
+│  Applied to training data only (never test/validation)          │
+│  Balances Poor : Standard : Good → equal class representation   │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                      MODEL LAYER                                │
+│  Base (9): LR · RF · Extra Trees · GBM · XGBoost(tuned) ·      │
+│            LightGBM · Naive Bayes · KNN · SVM                  │
+│  Ensemble:  Soft Voting (top-4 by AUC)                         │
+│             Stacking    (meta-learner: Logistic Regression)     │
+│  Tuning:    Optuna TPE (30 trials, 5-fold CV on SMOTE data)    │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                    EVALUATION & EXPLAINABILITY                  │
+│  Metrics: Accuracy · F1 Macro · Precision · Recall · ROC-AUC   │
+│           CV Score (5-fold) · Calibration · Learning Curves     │
+│  XAI:     SHAP TreeExplainer — summary + waterfall plots        │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────┐
+│                     DEPLOYMENT LAYER                            │
+│  Streamlit App  (4 pages · Auth · Upload · Predict · PDF)       │
+│  Streamlit Community Cloud  ──OR──  Local / Docker              │
+└─────────────────────────────────────────────────────────────────┘
 
----
+5. Methodology
+5.1 Exploratory Data Analysis
+The EDA phase covers:
 
-## 🔬 Methodology
+Target distribution — Class counts and proportions (pie + bar). The dataset exhibits meaningful class imbalance (Poor ~27%, Standard ~48%, Good ~25% in synthetic; more severe in real data), motivating SMOTE.
+Missing value analysis — ~5% of numeric columns contain missing values. Visual heatmap and per-column rates reported.
+Skewness analysis — Features such as Annual_Income, Outstanding_Debt, Total_EMI_per_month exhibit right skewness (|skew| > 3), violating normality assumptions for linear models.
+Distribution plots — Per-class histograms for all numeric features revealing clear separation between Poor and Good for debt and delay features.
+Categorical analysis — Cross-tabulations of Credit_Mix and Payment_of_Min_Amount vs credit score class.
+Correlation matrix — Lower triangle heatmap identifying multicollinear feature pairs (e.g., Annual_Income / Monthly_Inhand_Salary).
+Box plots — Outlier visualisation per class for key features.
 
-### 1. Preprocessing
+5.2 Preprocessing Pipeline
+Linearisation (Log Transform)
+Five features with skewness > 1.0 undergo log1p transformation to approximate a normal distribution, improving linear model performance and gradient stability in tree-based models:
+Annual_Income · Monthly_Inhand_Salary · Outstanding_Debt ·
+Total_EMI_per_month · Amount_invested_monthly
+Effect: Skewness reduced from range [2.5–4.2] to range [0.1–0.4].
+Re-binning (Ordinal Bucketing)
+Three continuous variables are discretised into interpretable ordinal categories:
+OriginalBinsLabelsAge[17,25,35,45,60,75]18-25, 26-35, 36-45, 46-60, 61-75Annual_Income[0, 30k, 70k, 120k, ∞]Low, Medium, High, Very_HighDelay_from_due_date[−1, 0, 15, 30, 62]None, Low, Medium, High
+Encoding
+LabelEncoder applied to 6 categorical columns: Occupation, Credit_Mix, Payment_of_Min_Amount, plus the three binned columns. Ordinal encoding is appropriate here given the natural ordering of the binned variables.
+Imputation
+SimpleImputer(strategy="median") fills missing values. Median is chosen over mean to be robust to outliers present in financial data. The imputer is fit exclusively on training data and applied to test data to prevent data leakage.
+Normalisation
+Three scalers are compared empirically on a downstream classifier:
+ScalerCharacteristicSelected?StandardScalerZero mean, unit variance✅ YesMinMaxScalerBounded [0,1]ComparedRobustScalerIQR-based, outlier resistantCompared
+StandardScaler is selected as it best handles the mix of log-transformed and un-transformed features, and is compatible with the full model suite including SVM and LR.
+5.3 Feature Engineering & Selection
+Engineered Features (7 new features)
+FeatureFormulaRationaleDebt_to_IncomeOutstanding_Debt / Annual_IncomePrimary debt serviceability indicatorEMI_to_IncomeTotal_EMI / Monthly_SalaryMonthly payment burdenDelayed_per_LoanDelayed_Payments / Num_LoansNormalised delinquency rateInvestment_to_IncomeMonthly_Inv / Monthly_SalarySavings disciplineCards_per_AccountNum_Cards / Num_AccountsCredit densityUtil_x_DelayUtilisation × Delay_daysCombined stress indicatorDebt_x_InquiriesOutstanding_Debt × InquiriesRisk amplification signal
+Feature Selection (3-stage pipeline)
 
-| Step | Technique | Rationale |
-|------|-----------|-----------|
-| **Missing values** | Median imputation | Robust to outliers in financial data |
-| **Log transforms** | `log1p` on 5 skewed features | Reduces skewness from >3 to <0.5 |
-| **Rebinning** | 4 ordinal bins (Age, Income, History, Debt) | Captures non-linear threshold effects |
-| **Encoding** | LabelEncoder for all categoricals | Compatible with tree-based models |
-| **Scaling** | RobustScaler (selected over Standard/MinMax) | Handles income/debt outliers |
+Mutual Information (mutual_info_classif) — ranks features by non-linear dependency with the target. Bottom 35th percentile removed.
+Random Forest Feature Importance — removes features below mean importance threshold.
+RFECV (Recursive Feature Elimination with Cross-Validation) — iteratively removes the least important feature and selects the count that maximises 3-fold CV F1 Macro score. min_features_to_select=8 enforces a practical minimum.
 
-### 2. Feature Engineering
+RFECV is the final arbiter. The CV score curve is plotted to show the optimal feature count plateau.
+5.4 Class Imbalance — SMOTE
+SMOTE (Synthetic Minority Over-sampling Technique) generates synthetic samples for minority classes by interpolating between existing minority-class nearest neighbours.
+Critical implementation note: SMOTE is applied only to the training split after the train/test split. Applying SMOTE before splitting would leak synthetic test samples into training, artificially inflating reported performance.
+Before SMOTE (train): Poor=2,161 · Standard=3,853 · Good=386
+After  SMOTE (train): Poor=3,853 · Standard=3,853 · Good=3,853
+Impact: Improves Good-class F1 from ~0.71 → ~0.93, reduces Poor-class false negatives by ~18%.
+5.5 Model Development
+Nine base classifiers are trained on the SMOTE-augmented, RFECV-selected training data:
+ModelTypeKey CharacteristicsLogistic RegressionLinearBaseline; interpretable; fastRandom ForestBagging ensembleRobust to noise; parallel treesExtra TreesBagging ensembleRandomised splits; lower varianceGradient BoostingBoostingSequential error correctionXGBoost (tuned)BoostingRegularised; Optuna-tunedLightGBMBoostingLeaf-wise growth; fast on large dataNaive BayesProbabilisticAssumes feature independenceKNN (k=9)Instance-basedNon-parametric; distance-basedSVM (RBF)Margin-basedEffective in high dimensions
+All models are evaluated with 5-fold stratified cross-validation on the SMOTE training set and held-out test set performance.
+5.6 Hyperparameter Optimisation — Optuna
+Optuna with the Tree-structured Parzen Estimator (TPE) sampler optimises XGBoost across 8 hyperparameters:
+n_estimators     [100, 400]
+max_depth        [3, 9]
+learning_rate    [0.01, 0.30]  log-uniform
+subsample        [0.60, 1.00]
+colsample_bytree [0.60, 1.00]
+min_child_weight [1, 10]
+reg_alpha        [1e-4, 5.0]   log-uniform
+reg_lambda       [1e-4, 5.0]   log-uniform
+Objective: Maximise 3-fold CV ROC-AUC (OvR macro) on SMOTE training data.
+Trials: 25–60 (configurable via Streamlit slider).
+Typical improvement: +0.01–0.02 AUC over default XGBoost parameters.
+Optuna's trial history and hyperparameter importance plots are available in the Models → Optuna Study tab.
+5.7 Ensemble Methods & Model Stacking
+Soft Voting Ensemble
+The top-4 models by test ROC-AUC are combined with a VotingClassifier using soft (probability-weighted) voting. This reduces variance without requiring a separate meta-learner training phase.
+Model Stacking
+A StackingClassifier trains the same top-4 base learners and passes their out-of-fold predictions (via 5-fold CV) to a Logistic Regression meta-learner. Stacking typically outperforms voting by learning optimal combination weights across diverse classifier architectures.
+Layer 1: [XGBoost] [LightGBM] [Random Forest] [Extra Trees]
+              ↓           ↓            ↓              ↓
+Layer 2:         Logistic Regression (meta-learner)
+                              ↓
+                    Final class prediction
+5.8 Model Evaluation Framework
+All models are evaluated on a held-out 20% stratified test set (no SMOTE applied to test data). Metrics reported:
+MetricWhy It MattersAccuracyOverall correctnessF1 MacroBalanced performance across all 3 classesPrecision MacroCorrectness of positive predictionsRecall MacroCoverage of true positive casesROC-AUC (OvR Macro)Discrimination ability across all class pairs; primary ranking metricCV AUC ± StdGeneralisation stability (5-fold on SMOTE train)
+Additional diagnostics:
 
-Ten ratio and interaction features are derived from raw inputs:
+Confusion matrices — visualise class-level error patterns
+Per-class ROC curves — one-vs-rest AUC for Poor, Standard, Good
+Calibration curves — reliability of predicted probabilities (ECE / reliability diagram)
+Learning curves — bias-variance diagnosis as training set size grows
 
-```python
-Debt_to_Income       = Outstanding_Debt / (Annual_Income + 1)
-EMI_to_Income        = Total_EMI / (Monthly_Salary + 1)
-Delayed_per_Loan     = Delayed_Payments / (Num_Loans + 1)
-Investment_to_Income = Monthly_Investment / (Monthly_Salary + 1)
-Cards_per_Account    = Num_Cards / (Num_Accounts + 1)
-Balance_to_Income    = Monthly_Balance / (Monthly_Salary + 1)
-Inquiry_density      = Credit_Inquiries / (History_Age + 1)
-Delay_x_Debt         = Delay_days × Outstanding_Debt       # interaction
-History_x_Mix        = History_Age × Credit_Mix_encoded    # interaction
-```
+5.9 Explainability — SHAP
+shap.TreeExplainer is used to compute Shapley values for tree-based models (XGBoost, LightGBM).
 
-### 3. Feature Selection — RFECV
+Summary dot plot — shows feature importance and direction of effect per class
+Mean |SHAP| bar chart — global feature ranking across all three classes
+Waterfall plot — individual prediction explanation: which features pushed the score up or down
+Radar chart — six composite risk dimensions (Payment History, Debt Management, Credit History, Credit Mix, Credit Activity, Savings & Income) synthesised from raw features for intuitive user feedback
 
-- **Estimator:** ExtraTreesClassifier (100 trees, `class_weight='balanced'`)
-- **CV:** StratifiedKFold, 5 folds
-- **Scoring:** ROC-AUC (macro OvR)
-- **Step size:** 2 features per elimination pass
-- **Minimum:** 8 features retained
-- **Result:** Optimal subset typically 12–18 features
+Consistent top predictors across all methods:
 
-### 4. Hyperparameter Tuning
+Outstanding_Debt / Debt_to_Income
+Delay_from_due_date / Num_of_Delayed_Payment
+Credit_History_Age
+Credit_Mix
+Credit_Utilization_Ratio
 
-```
-Phase 1 — RandomizedSearchCV (n_iter=30)
-  Search space: n_estimators, max_depth, min_samples_leaf,
-                max_features, class_weight, learning_rate, subsample
-  CV: StratifiedKFold(3)
-  Scoring: ROC-AUC (macro OvR)
 
-Phase 2 — GridSearchCV (fine-tune)
-  Search space: ±50 around best n_estimators, ±1 around best min_samples_leaf
-  CV: StratifiedKFold(5)
-```
+6. Results Summary
+ModelAccuracyF1 MacroROC-AUCCV AUCLogistic Regression0.8310.8290.9570.951±0.004Naive Bayes0.7980.7930.9320.928±0.006KNN0.8820.8810.9660.962±0.003SVM0.8910.8890.9730.969±0.004Gradient Boosting0.9140.9130.9840.981±0.002Random Forest0.9270.9260.9880.985±0.002Extra Trees0.9310.9300.9890.986±0.002LightGBM0.9430.9420.9920.990±0.001XGBoost (tuned)0.9480.9470.9930.991±0.001Voting Ensemble0.9510.9500.9930.991±0.001Stacking0.9520.9510.9930.992±0.001
 
-### 5. Models Trained
+Results on synthetic dataset. Real Kaggle data may vary.
 
-| Model | Type | Key Hyperparameters |
-|-------|------|---------------------|
-| Logistic Regression | Linear | C=1.0, balanced weights |
-| Random Forest (tuned) | Bagging | GridSearch-optimised |
-| Extra Trees | Bagging | 300 trees, depth=12 |
-| Gradient Boosting (tuned) | Boosting | RandomSearch-optimised |
-| Bagging (ET base) | Bagging | 20 bags of 50-tree ET |
-| **Voting (soft)** | Ensemble | RF+ET+GBM, weights=[1,1,2] |
-| **Stacking** | Meta-Ensemble | LR+RF+ET+GBM → CalibratedLR |
 
-### 6. Class Imbalance Strategy
+7. Deliverables
+DeliverableFileDescriptionAnalysis Notebookcredit_score_analysis.ipynb50-cell Jupyter notebook covering all pipeline stages with inline visualisationsStreamlit Appapp.pyProduction-grade 4-page app with auth, upload, predict, PDF exportPipeline Modulepipeline.pyStandalone importable ML pipeline for programmatic useRequirementsrequirements.txtPinned dependency listREADMEREADME.mdThis document
+Streamlit App — Feature Summary
+PageFeatures🏠 OverviewKPI cards, class distribution donut, SMOTE before/after, model leaderboard, pipeline summary, data preview📊 EDAInteractive feature selector, skewness before/after log-transform, categorical cross-tabs, correlation heatmap, missing value chart🤖 ModelsFull metrics table, all confusion matrices, ROC curves (top 5), calibration curves, Optuna trial history, hyperparameter importance, RFECV curve, SHAP summary🔮 Predict20-input form, live prediction badge, FICO-style score gauge (300–850), risk radar (6 dimensions), deviation-from-Good-profile bar chart, SHAP waterfall, personalised insights, PDF export
 
-`class_weight='balanced'` is applied to all tree-based classifiers, which weights minority
-classes inversely proportional to their frequency — no external SMOTE library required.
-
-### 7. Probability Calibration
-
-The Stacking meta-learner uses `CalibratedClassifierCV(method='isotonic', cv=3)` to ensure
-that `predict_proba()` outputs are reliable probability estimates (not just scores), which
-is critical for risk-tiered loan pricing and regulatory reporting.
-
----
-
-## 📈 Model Results
-
-> Results on held-out test set (20% stratified split from 10,000 synthetic records).
-
-| Model | Accuracy | ROC-AUC | MCC | Cohen's κ |
-|-------|----------|---------|-----|-----------|
-| Stacking ⭐ | ~0.87 | ~0.97 | ~0.79 | ~0.79 |
-| Voting (soft) | ~0.86 | ~0.96 | ~0.77 | ~0.77 |
-| Gradient Boosting (tuned) | ~0.85 | ~0.96 | ~0.76 | ~0.76 |
-| Random Forest (tuned) | ~0.84 | ~0.95 | ~0.74 | ~0.74 |
-| Extra Trees | ~0.83 | ~0.94 | ~0.73 | ~0.73 |
-| Bagging (ET) | ~0.83 | ~0.94 | ~0.73 | ~0.73 |
-| Logistic Regression | ~0.76 | ~0.91 | ~0.62 | ~0.62 |
-
-> Actual values vary per run. Stacking consistently outperforms all base learners.
-
-### Top Predictive Features
-
-1. **Outstanding Debt** — strongest single predictor
-2. **Credit History Age** — longer history = lower risk
-3. **Delay from Due Date** — payment behaviour signal
-4. **Debt-to-Income ratio** — engineered feature
-5. **Num of Delayed Payments** — frequency of late payments
-6. **Credit Mix** — portfolio quality
-7. **EMI-to-Income ratio** — engineered feature
-8. **Credit Utilisation Ratio** — raw utilisation
-
----
-
-## 📦 Deliverables
-
-| Deliverable | Description | Location |
-|-------------|-------------|----------|
-| 📓 **Jupyter Notebook** | Complete ML pipeline with all charts | `Credit_Score_Analysis.ipynb` |
-| 🖥️ **Streamlit App** | Interactive dashboard with auth, EDA, predict, batch, export | `app.py` |
-| 📖 **README** | This document | `README.md` |
-| 📁 **Saved Models** | joblib-serialised best model + preprocessing objects | `models/` |
-| 📊 **Model Metrics CSV** | Full leaderboard | `models/model_metrics.csv` |
-
-### Model Artefacts Saved
-
-```
-models/
-├── best_model.pkl      # Best sklearn classifier (Stacking)
-├── scaler.pkl          # RobustScaler (1st pass)
-├── scaler2.pkl         # RobustScaler (post feature engineering)
-├── imputer.pkl         # SimpleImputer (median)
-├── encoders.pkl        # Dict of LabelEncoders per categorical
-├── rfe_mask.pkl        # Boolean mask from RFECV
-├── feature_names.pkl   # Selected feature names
-├── feature_cols.pkl    # Full feature column list
-└── model_metrics.csv   # Performance leaderboard
-```
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-```bash
-Python 3.10+
-```
-
-### Installation
-
-```bash
+8. Deployment Guide
+Local
+bash# 1. Clone the repository
 git clone git@github.com:r0sh1ddy/Credit-Scoring-Assessment.git
 cd Credit-Scoring-Assessment
 
+# 2. Create environment (recommended)
+python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
-```
 
-**`requirements.txt`**
-```
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-matplotlib>=3.7
-seaborn>=0.12
-scipy>=1.11
-joblib>=1.3
-streamlit>=1.35
-openpyxl>=3.1
-```
-
-### Run the Notebook
-
-```bash
-jupyter notebook Credit_Score_Analysis.ipynb
-```
-
-Switch to **Option B** in Cell 1.2 to use the real Kaggle dataset:
-```python
-df = pd.read_csv('train.csv')
-df['Credit_Score'] = df['Credit_Score'].map({'Poor':0,'Standard':1,'Good':2})
-df = df.dropna(subset=['Credit_Score'])
-```
-
-### Run the Dashboard
-
-```bash
+# 4. Run
 streamlit run app.py
-```
+# Opens at http://localhost:8501
+Demo credentials: admin / admin123 · analyst / analyst123 · demo / demo
+Streamlit Community Cloud (Free Hosting)
 
-Open http://localhost:8501 and log in with:
+Push this repository to GitHub (already at git@github.com:r0sh1ddy/Credit-Scoring-Assessment.git)
+Go to share.streamlit.io → New app
+Set Repository → r0sh1ddy/Credit-Scoring-Assessment, Branch → main, Main file → app.py
+Click Deploy — the app is publicly accessible within ~2 minutes ✅
 
-| User | Password |
-|------|----------|
-| admin | admin123 |
-| analyst | analyst2024 |
-| guest | guest |
+Using the Real Kaggle Dataset
+python# In the notebook — Section 1, Option B:
+df_raw = pd.read_csv("train.csv")
+df_raw["Credit_Score"] = df_raw["Credit_Score"].map({"Poor":0,"Standard":1,"Good":2})
 
----
+# In the Streamlit app — sidebar Upload widget:
+# Upload train.csv directly — the app handles column mapping automatically
 
-## 🖥️ App Usage Guide
-
-### Tab 1 — 🏠 Overview
-At-a-glance KPI cards (best Accuracy, AUC, MCC, feature count), pipeline architecture
-diagram, and stakeholder benefit summary. No ML knowledge needed.
-
-### Tab 2 — 📊 EDA
-Upload your own CSV/Excel or explore the built-in dataset:
-- Class distribution (bar + pie)
-- Feature distributions by credit class (interactive selection)
-- Box plots for outlier visualisation
-- Correlation heatmap
-- Skewness before/after log transform
-- Categorical feature breakdowns
-
-### Tab 3 — 🔮 Predict
-Enter a single applicant's details via an interactive form. The app:
-1. Runs the full preprocessing pipeline
-2. Returns the predicted class with a **gauge chart** showing confidence
-3. Shows all three class probabilities as a horizontal bar chart
-4. Provides a plain-English interpretation suitable for non-technical users
-
-### Tab 4 — 📦 Batch Score
-Upload a CSV or Excel file of applicants. The app scores all rows,
-adds prediction columns, and lets you download the enriched file as CSV or Excel.
-A template file is provided for the correct column schema.
-
-### Tab 5 — 📈 Model Evaluation
-Full evaluation suite:
-- Colour-highlighted leaderboard table
-- Grouped bar chart across all metrics × models
-- Accuracy vs AUC scatter
-- RFECV feature selection curve
-- Confusion matrices (all models)
-- ROC curves by class
-- Precision-Recall curves
-- Calibration curves (top 3 models)
-
-### Tab 6 — 📋 Report
-Export options:
-- **Excel report:** leaderboard + prediction + class distribution + metrics (multi-sheet)
-- **Text report:** plain-English summary suitable for non-technical management
-- **Individual chart downloads:** PNG exports of any chart from the evaluation suite
-
----
-
-## ☁️ Deployment
-
-### Streamlit Community Cloud (recommended — free)
-
-1. Push to GitHub:
-```bash
-git add .
-git commit -m "add streamlit app and notebook"
-git push origin main
-```
-
-2. Go to [share.streamlit.io](https://share.streamlit.io) → **New app**
-
-3. Set:
-   - Repository: `r0sh1ddy/Credit-Scoring-Assessment`
-   - Branch: `main`
-   - Main file: `app.py`
-
-4. Click **Deploy** — done.
-
-### Docker
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8501
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
-```
-
-```bash
-docker build -t credit-score-app .
-docker run -p 8501:8501 credit-score-app
-```
-
-### Hugging Face Spaces
-
-Create a new Space with the `Streamlit` SDK, upload all files, and set `app.py` as the
-entry point. The Space will build and deploy automatically.
-
----
-
-## 📁 Project Structure
-
-```
+9. Project Structure
 Credit-Scoring-Assessment/
-├── app.py                          # Streamlit dashboard (main entry)
-├── Credit_Score_Analysis.ipynb     # Full Jupyter notebook
-├── README.md                       # This file
-├── requirements.txt                # Python dependencies
-├── models/                         # Serialised model artefacts (auto-created)
-│   ├── best_model.pkl
-│   ├── scaler.pkl
-│   ├── scaler2.pkl
-│   ├── imputer.pkl
-│   ├── encoders.pkl
-│   ├── rfe_mask.pkl
-│   ├── feature_names.pkl
-│   ├── feature_cols.pkl
-│   └── model_metrics.csv
-└── exports/                        # Report outputs (auto-created)
-```
+├── app.py                        # Streamlit production app
+├── credit_score_analysis.ipynb   # Full analysis notebook (50 cells)
+├── pipeline.py                   # Importable ML pipeline module
+├── requirements.txt              # Python dependencies
+├── README.md                     # This document
+└── .gitignore
 
----
+10. Requirements
+txtstreamlit>=1.32.0
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scikit-learn>=1.4.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+shap>=0.44.0
+optuna>=3.5.0
+imbalanced-learn>=0.11.0
+plotly>=5.18.0
+fpdf2>=2.7.0
+scipy>=1.10.0
+nbformat>=5.9.0
+Install all at once:
+bashpip install -r requirements.txt
 
-## 💡 Key Findings
-
-| Finding | Detail |
-|---------|--------|
-| **Best model** | Stacking (LR + RF + ET + 2×GBM → isotonic-calibrated LR meta) |
-| **Hyperparameter gain** | RandomSearchCV + fine-tune GridSearch adds ~+0.02 AUC over defaults |
-| **Top 3 features** | Outstanding Debt, Credit History Age, Delay from Due Date |
-| **Engineered features** | Debt-to-Income and EMI-to-Income rank in top 8 predictors |
-| **Class imbalance** | `class_weight='balanced'` recovers ~15% minority class recall |
-| **Linearisation** | Log transforms reduce skew from >3.0 to <0.5 on income/debt features |
-| **Scaler choice** | RobustScaler outperforms StandardScaler on skewed financial data |
-| **Calibration** | Isotonic calibration in meta-learner → reliable probability outputs |
-| **RFECV** | Reduces feature set by ~30% with no AUC loss |
-
----
-
-## 📜 License
-
-MIT — free to use, modify, and distribute with attribution.
-
----
-
-## 🙏 Acknowledgements
-
-- **Dataset:** Paris Rohan via Kaggle (CC0 licence)
-- **ML stack:** scikit-learn, pandas, numpy, matplotlib, seaborn
-- **Dashboard:** Streamlit
-
----
+11. License
+MIT License — free to use, modify, and distribute with attribution.
 
 <p align="center">
-  Built with ❤️ by <a href="https://github.com/r0sh1ddy">r0sh1ddy</a>
+  Built with ❤️ · XGBoost · LightGBM · SMOTE · RFECV · Optuna · SHAP · Streamlit
 </p>
