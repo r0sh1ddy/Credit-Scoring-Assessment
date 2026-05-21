@@ -674,9 +674,9 @@ def page_overview(df, pipe):
     st.subheader("Pipeline Summary")
     st.markdown(f"""
     <div class="info-box">
-    📐 <b>Preprocessing:</b> Log-transform ({", ".join(LOG_FEATS[:3])}…) → Age/Income/Delay re-binning → Label encoding → Median imputation → StandardScaler<br>
-    🔬 <b>Feature selection:</b> Mutual info → RF importance → RFECV → <b>{len(pipe["selected"])} features selected</b><br>
-    ⚖️ <b>SMOTE:</b> Balanced training set → {sum(pipe["smote_counts"].values()):,} samples<br>
+    📐 <b>Preprocessing:</b> Log-transform ({", ".join(LOG_FEATS[:3])}…) - Age/Income/Delay re-binning - Label encoding - Median imputation - StandardScaler<br>
+    🔬 <b>Feature selection:</b> Mutual info - RF importance - RFECV - <b>{len(pipe["selected"])} features selected</b><br>
+    ⚖️ <b>SMOTE:</b> Balanced training set - {sum(pipe["smote_counts"].values()):,} samples<br>
     🔧 <b>Optuna:</b> {st.session_state.get("n_trials",25)} trials · best CV AUC {pipe["study"].best_value:.4f}<br>
     🤖 <b>Models:</b> 9 base classifiers + Soft Voting + Stacking (meta: LR) · Best: <b>{bn}</b>
     </div>

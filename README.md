@@ -77,7 +77,7 @@ In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 ┌────────────────────────────▼────────────────────────────────────┐
 │                     PREPROCESSING PIPELINE                      │
 │  1. Linearisation (log1p on 5 skewed features)                  │
-│  2. Re-binning  (Age · Income · Delay → ordinal buckets)        │
+│  2. Re-binning  (Age · Income · Delay - ordinal buckets)        │
 │  3. Encoding    (LabelEncoder for 6 categorical columns)        │
 │  4. Imputation  (Median strategy — handles ~5% missing)         │
 │  5. Normalisation (StandardScaler · compared vs MinMax/Robust)  │
@@ -87,14 +87,14 @@ In the Streamlit app, use the 📂 Upload Dataset sidebar widget
 │                   FEATURE ENGINEERING & SELECTION               │
 │  Engineered: Debt-to-Income · EMI-to-Income · Delayed/Loan ·   │
 │              Util×Delay · Debt×Inquiries · Cards/Account        │
-│  Selection:  Mutual Info → RF Importance → RFECV (F1 Macro)    │
-│              → optimal N features retained                       │
+│  Selection:  Mutual Info - RF Importance - RFECV (F1 Macro)    │
+│              - optimal N features retained                       │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
 │                  IMBALANCE HANDLING — SMOTE                     │
 │  Applied to training data only (never test/validation)          │
-│  Balances Poor : Standard : Good → equal class representation   │
+│  Balances Poor : Standard : Good - equal class representation   │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -163,7 +163,7 @@ SMOTE (Synthetic Minority Over-sampling Technique) generates synthetic samples f
 Critical implementation note: SMOTE is applied only to the training split after the train/test split. Applying SMOTE before splitting would leak synthetic test samples into training, artificially inflating reported performance.
 Before SMOTE (train): Poor=2,161 · Standard=3,853 · Good=386
 After  SMOTE (train): Poor=3,853 · Standard=3,853 · Good=3,853
-Impact: Improves Good-class F1 from ~0.71 → ~0.93, reduces Poor-class false negatives by ~18%.
+Impact: Improves Good-class F1 from ~0.71 - ~0.93, reduces Poor-class false negatives by ~18%.
 5.5 Model Development
 Nine base classifiers are trained on the SMOTE-augmented, RFECV-selected training data:
 ModelTypeKey CharacteristicsLogistic RegressionLinearBaseline; interpretable; fastRandom ForestBagging ensembleRobust to noise; parallel treesExtra TreesBagging ensembleRandomised splits; lower varianceGradient BoostingBoostingSequential error correctionXGBoost (tuned)BoostingRegularised; Optuna-tunedLightGBMBoostingLeaf-wise growth; fast on large dataNaive BayesProbabilisticAssumes feature independenceKNN (k=9)Instance-basedNon-parametric; distance-basedSVM (RBF)Margin-basedEffective in high dimensions
@@ -181,7 +181,7 @@ reg_lambda       [1e-4, 5.0]   log-uniform
 Objective: Maximise 3-fold CV ROC-AUC (OvR macro) on SMOTE training data.
 Trials: 25–60 (configurable via Streamlit slider).
 Typical improvement: +0.01–0.02 AUC over default XGBoost parameters.
-Optuna's trial history and hyperparameter importance plots are available in the Models → Optuna Study tab.
+Optuna's trial history and hyperparameter importance plots are available in the Models - Optuna Study tab.
 5.7 Ensemble Methods & Model Stacking
 Soft Voting Ensemble
 The top-4 models by test ROC-AUC are combined with a VotingClassifier using soft (probability-weighted) voting. This reduces variance without requiring a separate meta-learner training phase.
@@ -249,8 +249,8 @@ Demo credentials: admin / admin123 · analyst / analyst123 · demo / demo
 Streamlit Community Cloud (Free Hosting)
 
 Push this repository to GitHub (already at git@github.com:r0sh1ddy/Credit-Scoring-Assessment.git)
-Go to share.streamlit.io → New app
-Set Repository → r0sh1ddy/Credit-Scoring-Assessment, Branch → main, Main file → app.py
+Go to share.streamlit.io - New app
+Set Repository - r0sh1ddy/Credit-Scoring-Assessment, Branch - main, Main file - app.py
 Click Deploy — the app is publicly accessible within ~2 minutes ✅
 
 Using the Real Kaggle Dataset
