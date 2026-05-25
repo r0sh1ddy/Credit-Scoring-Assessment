@@ -66,24 +66,8 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 import shap
 from fpdf import FPDF                   
 
-st.set_page_config(
-    page_title="RiskEngine Pro | Credit Scoring",
-    page_icon="💳",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# 2. Get the exact path of the current file's directory
-current_dir = Path(__file__).parent
-image_path = current_dir / "credit score.png"
-
-# 3. Safely render the visual asset
-if image_path.exists():
-    st.image(str(image_path), width=80)
-else:
-    st.error(f"Image not found at expected path: {image_path}")
-
-st.title("Credit Risk Assessment Dashboard")
+st.set_page_config(page_title="CreditIQ", page_icon="💳",
+                   layout="wide", initial_sidebar_state="expanded")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTS
