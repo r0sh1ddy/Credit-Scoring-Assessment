@@ -1,39 +1,17 @@
-# _____________________________________________________________
-# CreditIQ — Python Dependencies
-# Install: pip install -r requirements.txt
-# Python : 3.10+  (tested on 3.10, 3.11, 3.12)
-# -------------------------------------------------------------
-
-# App framework 
-streamlit>=1.32.0
-
-# Data & numerics 
-numpy>=1.24.0
-pandas>=2.0.0
-scipy>=1.10.0
-
-# Visualisation 
-matplotlib>=3.7.0
-seaborn>=0.12.0
-plotly>=5.18.0
-
-# Machine learning 
-scikit-learn>=1.4.0
-xgboost>=2.0.0
-lightgbm>=4.0.0
-imbalanced-learn>=0.11.0        # SMOTE
-
-# Hyperparameter optimisation 
-optuna>=3.5.0
-
-# Explainability 
-shap>=0.44.0
-
-# PDF report export 
-fpdf2>=2.7.0
-
-# Notebook support (analysis notebook only, not needed for Streamlit) 
-nbformat>=5.9.0
-nbconvert>=7.0.0
-ipykernel>=6.0.0
-ipython>=8.0.0
+# CreditIQ — Streamlit Cloud requirements
+# Ordered: lightest → heaviest to fail fast on bad installs
+ 
+streamlit==1.41.1
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.13.1
+matplotlib==3.9.4
+seaborn==0.13.2
+plotly==5.24.1
+scikit-learn==1.5.2
+imbalanced-learn==0.12.4
+optuna==3.6.1
+xgboost==2.1.3
+lightgbm==4.5.0
+shap==0.46.0
+fpdf2==2.8.1
