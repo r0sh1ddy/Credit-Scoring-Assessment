@@ -10,7 +10,8 @@ Run: streamlit run app.py
 # ─────────────────────────────────────────────────────────────────────────────
 # IMPORTS
 # ─────────────────────────────────────────────────────────────────────────────
-import streamlit as st                  
+import streamlit as st 
+from pathlib import Path                  
 
 import io
 import hashlib
@@ -72,8 +73,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Hero banner / logo
-st.image("credit_score.png", width=80)
+# 2. Get the exact path of the current file's directory
+current_dir = Path(__file__).parent
+image_path = current_dir / "credit score.png"
+
+# 3. Safely render the visual asset
+if image_path.exists():
+    st.image(str(image_path), width=80)
+else:
+    st.error(f"Image not found at expected path: {image_path}")
+
 st.title("Credit Risk Assessment Dashboard")
 
 # ─────────────────────────────────────────────────────────────────────────────
