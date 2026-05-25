@@ -10,10 +10,16 @@ Run: streamlit run app.py
 # ─────────────────────────────────────────────────────────────────────────────
 # IMPORTS
 # ─────────────────────────────────────────────────────────────────────────────
-import io, hashlib, warnings, tempfile, os, math
+import io
+import hashlib
+import warnings
+import tempfile
+import os
+import math
 from datetime import datetime
+
 warnings.filterwarnings("ignore")
- 
+
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -23,48 +29,51 @@ import seaborn as sns
 import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
- 
-from sklearn.model_selection import (train_test_split, StratifiedKFold,
-                                     cross_val_score, learning_curve)
-from sklearn.preprocessing import (LabelEncoder, StandardScaler, MinMaxScaler,
-                                    RobustScaler, label_binarize)
+
+from sklearn.model_selection import (
+    train_test_split, StratifiedKFold,
+    cross_val_score, learning_curve
+)
+from sklearn.preprocessing import (
+    LabelEncoder, StandardScaler, MinMaxScaler,
+    RobustScaler, label_binarize
+)
 from sklearn.impute import SimpleImputer
 from sklearn.feature_selection import RFECV, mutual_info_classif
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import (RandomForestClassifier, GradientBoostingClassifier,
-                               ExtraTreesClassifier, VotingClassifier, StackingClassifier)
+from sklearn.ensemble import (
+    RandomForestClassifier, GradientBoostingClassifier,
+    ExtraTreesClassifier, VotingClassifier, StackingClassifier
+)
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
-from sklearn.metrics import (accuracy_score, f1_score, precision_score, recall_score,
-                              classification_report, confusion_matrix,
-                              ConfusionMatrixDisplay, roc_auc_score, roc_curve)
+from sklearn.metrics import (
+    accuracy_score, f1_score, precision_score, recall_score,
+    classification_report, confusion_matrix,
+    ConfusionMatrixDisplay, roc_auc_score, roc_curve
+)
 import xgboost as xgb
 import lightgbm as lgb
 from imblearn.over_sampling import SMOTE
 import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 import shap
-from fpdf import FPDF
-
-import streamlit as st
-from PIL import Image
+from fpdf import FPD
  
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
-# ─────────────────────────────────────────────────────────────────────────────
-app_icon = Image.open("credit score.png")
-
-# Set it globally for the browser tab and app navigation
+# ────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="RiskEngine Pro | Credit Scoring ",
-    page_icon=app_icon,
-    layout="wide"
+    page_title="RiskEngine Pro | Credit Scoring",
+    page_icon="💳",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# Use it as a hero banner inside your app layout
-st.image(app_icon, width=80)
+# Hero banner / logo
+st.image("credit_score.png", width=80)
 st.title("Credit Risk Assessment Dashboard")
  
 # ─────────────────────────────────────────────────────────────────────────────
