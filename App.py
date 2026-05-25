@@ -47,12 +47,25 @@ import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 import shap
 from fpdf import FPDF
+
+import streamlit as st
+from PIL import Image
  
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="CreditIQ", page_icon="💳",
-                   layout="wide", initial_sidebar_state="expanded")
+app_icon = Image.open("credit score.png")
+
+# Set it globally for the browser tab and app navigation
+st.set_page_config(
+    page_title="RiskEngine Pro | Credit Scoring ",
+    page_icon=app_icon,
+    layout="wide"
+)
+
+# Use it as a hero banner inside your app layout
+st.image(app_icon, width=80)
+st.title("Credit Risk Assessment Dashboard")
  
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTS
