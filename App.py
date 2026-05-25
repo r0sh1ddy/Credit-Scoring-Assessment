@@ -10,6 +10,8 @@ Run: streamlit run app.py
 # ─────────────────────────────────────────────────────────────────────────────
 # IMPORTS
 # ─────────────────────────────────────────────────────────────────────────────
+import streamlit as st                  
+
 import io
 import hashlib
 import warnings
@@ -20,15 +22,16 @@ from datetime import datetime
 
 warnings.filterwarnings("ignore")
 
-import numpy as np
-import pandas as pd
+
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use("Agg")                   
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import streamlit as st
+
 
 from sklearn.model_selection import (
     train_test_split, StratifiedKFold,
@@ -60,11 +63,8 @@ from imblearn.over_sampling import SMOTE
 import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 import shap
-from fpdf import FPD
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# PAGE CONFIG
-# ────────────────────────────────────────────────────────────────────────────
+from fpdf import FPDF                   
+
 st.set_page_config(
     page_title="RiskEngine Pro | Credit Scoring",
     page_icon="💳",
@@ -75,7 +75,7 @@ st.set_page_config(
 # Hero banner / logo
 st.image("credit_score.png", width=80)
 st.title("Credit Risk Assessment Dashboard")
- 
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -83,10 +83,10 @@ SEED        = 42
 CLASS_NAMES = ["Poor", "Standard", "Good"]
 LABEL_MAP   = {0: "Poor", 1: "Standard", 2: "Good"}
 COLORS      = ["#ef4444", "#f59e0b", "#22c55e"]
-LOG_FEATS   = ["Annual_Income","Monthly_Inhand_Salary","Outstanding_Debt",
-               "Total_EMI_per_month","Amount_invested_monthly"]
-CAT_COLS    = ["Occupation","Credit_Mix","Payment_of_Min_Amount",
-               "Age_Group","Income_Bracket","Delay_Bucket"]
+LOG_FEATS   = ["Annual_Income", "Monthly_Inhand_Salary", "Outstanding_Debt",
+               "Total_EMI_per_month", "Amount_invested_monthly"]
+CAT_COLS    = ["Occupation", "Credit_Mix", "Payment_of_Min_Amount",
+               "Age_Group", "Income_Bracket", "Delay_Bucket"]
 DARK_BG     = "#0f1117"
 CARD_BG     = "#1a1f2e"
 BORDER      = "#2a2f3e"
