@@ -1,71 +1,57 @@
-
-"""
-CreditIQ - Production Streamlit App
+""" 
+CreditIQ — Production Streamlit App
 Features: Auth · CSV Upload · Linearisation · Normalisation · Re-binning ·
           RFECV · SMOTE · Optuna · 9 Models · Voting · Stacking ·
           Gauge · Radar · Deviation · SHAP Waterfall · PDF Export
 Run: streamlit run app.py
 """
- 
+
 # ─────────────────────────────────────────────────────────────────────────────
 # IMPORTS
 # ─────────────────────────────────────────────────────────────────────────────
-import streamlit as st 
-from pathlib import Path                  
-
-import io
-import hashlib
-import warnings
-import tempfile
-import os
-import math
+import io, hashlib, warnings, tempfile, os, math
 from datetime import datetime
 
 warnings.filterwarnings("ignore")
 
-
-import matplotlib
-matplotlib.use("Agg")                   
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 import plotly.graph_objects as go
 import plotly.express as px
+import streamlit as st
 
-
-from sklearn.model_selection import (
-    train_test_split, StratifiedKFold,
-    cross_val_score, learning_curve
-)
-from sklearn.preprocessing import (
-    LabelEncoder, StandardScaler, MinMaxScaler,
-    RobustScaler, label_binarize
-)
+from sklearn.model_selection import (train_test_split, StratifiedKFold,
+                                     cross_val_score, learning_curve)
+from sklearn.preprocessing import (LabelEncoder, StandardScaler, MinMaxScaler,
+                                    RobustScaler, label_binarize)
 from sklearn.impute import SimpleImputer
 from sklearn.feature_selection import RFECV, mutual_info_classif
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import (
-    RandomForestClassifier, GradientBoostingClassifier,
-    ExtraTreesClassifier, VotingClassifier, StackingClassifier
-)
+from sklearn.ensemble import (RandomForestClassifier, GradientBoostingClassifier,
+                               ExtraTreesClassifier, VotingClassifier, StackingClassifier)
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
-from sklearn.metrics import (
-    accuracy_score, f1_score, precision_score, recall_score,
-    classification_report, confusion_matrix,
-    ConfusionMatrixDisplay, roc_auc_score, roc_curve
-)
+from sklearn.metrics import (accuracy_score, f1_score, precision_score, recall_score,
+                              classification_report, confusion_matrix,
+                              ConfusionMatrixDisplay, roc_auc_score, roc_curve)
 import xgboost as xgb
 import lightgbm as lgb
 from imblearn.over_sampling import SMOTE
 import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 import shap
-from fpdf import FPDF                   
+from fpdf import FPDF
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PAGE CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="CreditIQ", page_icon="💳",
                    layout="wide", initial_sidebar_state="expanded")
 
@@ -76,14 +62,14 @@ SEED        = 42
 CLASS_NAMES = ["Poor", "Standard", "Good"]
 LABEL_MAP   = {0: "Poor", 1: "Standard", 2: "Good"}
 COLORS      = ["#ef4444", "#f59e0b", "#22c55e"]
-LOG_FEATS   = ["Annual_Income", "Monthly_Inhand_Salary", "Outstanding_Debt",
-               "Total_EMI_per_month", "Amount_invested_monthly"]
-CAT_COLS    = ["Occupation", "Credit_Mix", "Payment_of_Min_Amount",
-               "Age_Group", "Income_Bracket", "Delay_Bucket"]
+LOG_FEATS   = ["Annual_Income","Monthly_Inhand_Salary","Outstanding_Debt",
+               "Total_EMI_per_month","Amount_invested_monthly"]
+CAT_COLS    = ["Occupation","Credit_Mix","Payment_of_Min_Amount",
+               "Age_Group","Income_Bracket","Delay_Bucket"]
 DARK_BG     = "#0f1117"
 CARD_BG     = "#1a1f2e"
 BORDER      = "#2a2f3e"
- 
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -113,19 +99,19 @@ section[data-testid="stSidebar"] { background:#161b27; border-right:1px solid #2
 hr { border-color:#2a2f3e !important; }
 </style>
 """, unsafe_allow_html=True)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # AUTH
 # ─────────────────────────────────────────────────────────────────────────────
 def _h(pw): return hashlib.sha256(pw.encode()).hexdigest()
- 
+
 USERS = {
     "admin":   {"hash": _h("admin123"),   "name": "Admin",          "role": "admin"},
     "analyst": {"hash": _h("analyst123"), "name": "Credit Analyst", "role": "analyst"},
     "demo":    {"hash": _h("demo"),       "name": "Demo User",      "role": "viewer"},
 }
- 
+
 def login_page():
     _, col, _ = st.columns([1, 1.1, 1])
     with col:
@@ -148,8 +134,8 @@ def login_page():
         👤 <code>admin</code> / <code>admin123</code><br>
         👤 <code>analyst</code> / <code>analyst123</code><br>
         👤 <code>demo</code> / <code>demo</code></div>""", unsafe_allow_html=True)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DATA
 # ─────────────────────────────────────────────────────────────────────────────
@@ -194,7 +180,7 @@ def generate_dataset(n=10_000, seed=42):
         "Monthly_Balance": rng.uniform(0,2000,n).round(2),
         "Credit_Score": labels,
     })
- 
+
 def load_upload(f):
     try:
         df = pd.read_csv(f) if f.name.endswith(".csv") else pd.read_excel(f)
@@ -203,8 +189,8 @@ def load_upload(f):
         return df
     except Exception as e:
         st.error(f"Upload error: {e}"); return None
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PREPROCESSING
 # ─────────────────────────────────────────────────────────────────────────────
@@ -214,7 +200,7 @@ def linearise(df):
         if col in df.columns:
             df[col] = np.log1p(df[col].clip(lower=0))
     return df
- 
+
 def rebin(df):
     df = df.copy()
     df["Age_Group"] = pd.cut(df["Age"], bins=[17,25,35,45,60,75],
@@ -225,7 +211,7 @@ def rebin(df):
     df["Delay_Bucket"] = pd.cut(df["Delay_from_due_date"].fillna(0),
         bins=[-1,0,15,30,62], labels=["None","Low","Medium","High"]).astype(str)
     return df
- 
+
 def engineer(df):
     df = df.copy()
     df["Debt_to_Income"]       = df["Outstanding_Debt"]       / (df["Annual_Income"]         + 1e-3)
@@ -236,8 +222,8 @@ def engineer(df):
     df["Util_x_Delay"]         = df["Credit_Utilization_Ratio"]* df["Delay_from_due_date"].fillna(0)
     df["Debt_x_Inquiries"]     = df["Outstanding_Debt"]        * df["Num_Credit_Inquiries"].fillna(0)
     return df
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FULL PIPELINE  (cached per dataset hash)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -245,7 +231,7 @@ def engineer(df):
 def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
     df = linearise(_df)
     df = rebin(df)
- 
+
     # Encode
     le_map = {}
     for col in CAT_COLS:
@@ -253,26 +239,26 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
             le = LabelEncoder()
             df[col] = le.fit_transform(df[col].astype(str))
             le_map[col] = le
- 
+
     X_raw = df.drop("Credit_Score", axis=1)
     y     = df["Credit_Score"]
- 
+
     # Impute
     imputer = SimpleImputer(strategy="median")
     X_imp   = pd.DataFrame(imputer.fit_transform(X_raw), columns=X_raw.columns)
- 
+
     # Engineer features
     X_fe = engineer(X_imp)
- 
+
     # Split
     X_tr, X_te, y_tr, y_te = train_test_split(
         X_fe, y, test_size=0.2, random_state=SEED, stratify=y)
- 
+
     # Normalise
     scaler   = StandardScaler()
     X_tr_s   = pd.DataFrame(scaler.fit_transform(X_tr), columns=X_tr.columns)
     X_te_s   = pd.DataFrame(scaler.transform(X_te),     columns=X_te.columns)
- 
+
     # RFECV
     rf_rfe = RandomForestClassifier(n_estimators=60, max_depth=6, random_state=SEED, n_jobs=-1)
     rfecv  = RFECV(rf_rfe, cv=StratifiedKFold(3, shuffle=True, random_state=SEED),
@@ -280,11 +266,11 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
     rfecv.fit(X_tr_s, y_tr)
     sel    = X_tr_s.columns[rfecv.support_].tolist()
     X_tr_r = X_tr_s[sel]; X_te_r = X_te_s[sel]
- 
+
     # SMOTE
     smote       = SMOTE(random_state=SEED)
     X_sm, y_sm  = smote.fit_resample(X_tr_r, y_tr)
- 
+
     # Optuna XGBoost tuning
     def obj(trial):
         p = dict(n_estimators=trial.suggest_int("n_estimators",100,400),
@@ -299,13 +285,13 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
         return cross_val_score(xgb.XGBClassifier(**p), X_sm, y_sm,
             cv=StratifiedKFold(3, shuffle=True, random_state=SEED),
             scoring="roc_auc_ovr", n_jobs=-1).mean()
- 
+
     study = optuna.create_study(direction="maximize",
                                 sampler=optuna.samplers.TPESampler(seed=SEED))
     study.optimize(obj, n_trials=n_trials, show_progress_bar=False)
     best_p = {**study.best_params, "eval_metric":"mlogloss",
               "random_state":SEED, "n_jobs":-1}
- 
+
     # All base models
     cv5 = StratifiedKFold(5, shuffle=True, random_state=SEED)
     base = {
@@ -324,11 +310,11 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
         "KNN":                  KNeighborsClassifier(n_neighbors=9, n_jobs=-1),
         "SVM":                  SVC(kernel="rbf", C=1.0, probability=True, random_state=SEED),
     }
- 
+
     results = {}
     X_sm_np = X_sm if isinstance(X_sm, np.ndarray) else X_sm
     X_te_np = X_te_r.values
- 
+
     for name, mdl in base.items():
         mdl.fit(X_sm_np, y_sm)
         p2 = mdl.predict(X_te_np); pr = mdl.predict_proba(X_te_np)
@@ -340,7 +326,7 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
             recall=recall_score(y_te,p2,average="macro"),
             roc_auc=roc_auc_score(y_te,pr,multi_class="ovr",average="macro"),
             cv_mean=cv.mean(), cv_std=cv.std())
- 
+
     # Voting ensemble
     top4 = sorted(results, key=lambda n: results[n]["roc_auc"], reverse=True)[:4]
     voting = VotingClassifier([(n, base[n]) for n in top4], voting="soft", n_jobs=-1)
@@ -353,7 +339,7 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
         recall=recall_score(y_te,vp,average="macro"),
         roc_auc=roc_auc_score(y_te,vr,multi_class="ovr",average="macro"),
         cv_mean=cv_v.mean(), cv_std=cv_v.std())
- 
+
     # Stacking
     stack = StackingClassifier([(n, base[n]) for n in top4],
         final_estimator=LogisticRegression(max_iter=2000, C=0.5, random_state=SEED),
@@ -367,9 +353,9 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
         recall=recall_score(y_te,sp,average="macro"),
         roc_auc=roc_auc_score(y_te,sr,multi_class="ovr",average="macro"),
         cv_mean=cv_s.mean(), cv_std=cv_s.std())
- 
+
     best_name = max(results, key=lambda n: results[n]["roc_auc"])
- 
+
     return dict(
         results=results, best_name=best_name, selected=sel, rfecv=rfecv,
         study=study, best_p=best_p, scaler=scaler, imputer=imputer,
@@ -380,20 +366,20 @@ def run_pipeline(_df: pd.DataFrame, df_key: str, n_trials: int = 25):
         poor_profile=X_tr_r[y_tr.values==0].mean().to_dict(),
         smote_counts=dict(zip(*np.unique(y_sm, return_counts=True))),
     )
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PREDICT HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 def proba_to_score(proba):
     return int(300 + proba[1]*200 + proba[2]*550)
- 
+
 def expected_range(annual_income):
     if annual_income < 30000:  return 400, 560
     if annual_income < 80000:  return 540, 700
     if annual_income < 150000: return 650, 780
     return 700, 820
- 
+
 def radar_dims(inp):
     return {
         "Payment\nHistory":     max(0, 100-(inp.get("Num_of_Delayed_Payment",0) or 0)/22*80
@@ -410,8 +396,8 @@ def radar_dims(inp):
                                        /max((inp.get("Monthly_Inhand_Salary",1) or 1),1)*80
                                        +min(20,(inp.get("Annual_Income",0) or 0)/150000*20)),
     }
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PLOTLY CHARTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -438,7 +424,7 @@ def gauge(score, lo, hi, label):
     fig.update_layout(paper_bgcolor=CARD_BG, plot_bgcolor=CARD_BG,
                       font={"color":"#e8e8e8"}, margin=dict(l=20,r=20,t=80,b=20), height=310)
     return fig
- 
+
 def radar(scores):
     cats = list(scores.keys()); vals = list(scores.values())
     vals += [vals[0]]; cats += [cats[0]]
@@ -455,7 +441,7 @@ def radar(scores):
         paper_bgcolor=CARD_BG, legend=dict(font=dict(color="#e8e8e8"),bgcolor=CARD_BG),
         margin=dict(l=60,r=60,t=40,b=40), height=330)
     return fig
- 
+
 def deviation_chart(user_fe, good_p, poor_p):
     KEYS = [("Outstanding_Debt",True,"Outstanding Debt"),
             ("Delay_from_due_date",True,"Avg Delay (days)"),
@@ -486,7 +472,7 @@ def deviation_chart(user_fe, good_p, poor_p):
         xaxis=dict(gridcolor=BORDER), yaxis=dict(gridcolor=BORDER),
         height=360, margin=dict(l=10,r=10,t=50,b=30))
     return fig
- 
+
 def shap_waterfall(mdl, x_single, feat_names, cls_idx):
     try:
         ex  = shap.TreeExplainer(mdl)
@@ -497,15 +483,15 @@ def shap_waterfall(mdl, x_single, feat_names, cls_idx):
         fig = go.Figure(go.Bar(x=top.values, y=top.index, orientation="h",
             marker_color=["#ef4444" if v<0 else "#22c55e" for v in top.values]))
         fig.add_vline(x=0, line_color="#888", line_width=1)
-        fig.update_layout(title=f"SHAP - Why '{CLASS_NAMES[cls_idx]}'?",
+        fig.update_layout(title=f"SHAP — Why '{CLASS_NAMES[cls_idx]}'?",
             xaxis_title="SHAP value", paper_bgcolor=CARD_BG, plot_bgcolor=CARD_BG,
             font=dict(color="#e8e8e8"), xaxis=dict(gridcolor=BORDER),
             yaxis=dict(gridcolor=BORDER), height=360, margin=dict(l=10,r=10,t=50,b=30))
         return fig
     except Exception as e:
         return None
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PDF REPORT
 # ─────────────────────────────────────────────────────────────────────────────
@@ -527,7 +513,7 @@ def _gauge_png(score, lo, hi):
     buf = io.BytesIO()
     plt.tight_layout(); fig.savefig(buf, format="png", dpi=120, bbox_inches="tight",
                                     facecolor="#1a1f2e"); plt.close(); buf.seek(0); return buf
- 
+
 def _radar_png(scores):
     cats = [c.replace("\n"," ") for c in scores]; vals = list(scores.values())
     N = len(cats); angles = [n/N*2*math.pi for n in range(N)]
@@ -541,13 +527,13 @@ def _radar_png(scores):
     buf = io.BytesIO()
     plt.tight_layout(); fig.savefig(buf,format="png",dpi=120,bbox_inches="tight",
                                     facecolor="#1a1f2e"); plt.close(); buf.seek(0); return buf
- 
+
 def build_pdf(inputs, score, lo, hi, label, proba, tips, radar_sc, user_fe, good_p, poor_p):
     pdf = FPDF(); pdf.add_page(); pdf.set_margins(15,15,15)
     # header
     pdf.set_fill_color(15,17,23); pdf.rect(0,0,210,38,"F")
     pdf.set_text_color(255,255,255); pdf.set_font("Helvetica","B",20)
-    pdf.cell(0,16,"CreditIQ - Credit Score Report",ln=True,align="C")
+    pdf.cell(0,16,"CreditIQ — Credit Score Report",ln=True,align="C")
     pdf.set_font("Helvetica","",9); pdf.set_text_color(160,160,160)
     pdf.cell(0,7,f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  "
                f"Model: Stacking / XGBoost Tuned",ln=True,align="C")
@@ -595,18 +581,18 @@ def build_pdf(inputs, score, lo, hi, label, proba, tips, radar_sc, user_fe, good
         pdf.multi_cell(0,5,clean)
     # footer
     pdf.set_y(-16); pdf.set_font("Helvetica","I",7); pdf.set_text_color(160,160,160)
-    pdf.cell(0,5,"CreditIQ - For analytical purposes only. Not financial advice.",align="C")
+    pdf.cell(0,5,"CreditIQ — For analytical purposes only. Not financial advice.",align="C")
     out = io.BytesIO(); pdf.output(out); out.seek(0); return out
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────────────────
 def sidebar():
     with st.sidebar:
         st.markdown("## 💳 CreditIQ")
-        st.caption(f"**{st.session_state.get('user_name','-')}** "
-                   f"({st.session_state.get('user_role','-')})")
+        st.caption(f"**{st.session_state.get('user_name','—')}** "
+                   f"({st.session_state.get('user_role','—')})")
         st.markdown("---")
         page = st.radio("Navigate",
             ["🏠 Overview","📊 EDA","🤖 Models","🔮 Predict Score"],
@@ -633,8 +619,8 @@ def sidebar():
             st.rerun()
         st.caption("XGBoost · LightGBM · SMOTE · RFECV · Optuna · SHAP")
     return page
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE: OVERVIEW
 # ─────────────────────────────────────────────────────────────────────────────
@@ -642,7 +628,7 @@ def page_overview(df, pipe):
     st.title("Credit Score Analysis Dashboard")
     res = pipe["results"]; bn = pipe["best_name"]
     best = res[bn]
- 
+
     c1,c2,c3,c4,c5 = st.columns(5)
     c1.metric("Rows", f"{len(df):,}")
     c2.metric("Features", f"{len(pipe['X_tr_r'].columns)} selected / {len(pipe['X_tr_r'].columns)+len(pipe['selected'])} total")
@@ -650,7 +636,7 @@ def page_overview(df, pipe):
     c4.metric("Best ROC-AUC",  f"{best['roc_auc']:.4f}")
     c5.metric("Models Trained", str(len(res)))
     st.markdown("---")
- 
+
     col1,col2,col3 = st.columns(3)
     with col1:
         st.subheader("Class Distribution")
@@ -661,7 +647,7 @@ def page_overview(df, pipe):
             height=270, margin=dict(l=10,r=10,t=10,b=10),
             legend=dict(font=dict(color="#e8e8e8")))
         st.plotly_chart(fig, use_container_width=True)
- 
+
     with col2:
         st.subheader("SMOTE Rebalancing")
         sc = pipe["smote_counts"]
@@ -677,29 +663,29 @@ def page_overview(df, pipe):
             xaxis=dict(gridcolor=BORDER), yaxis=dict(gridcolor=BORDER),
             margin=dict(l=10,r=10,t=10,b=10),legend=dict(font=dict(color="#e8e8e8")))
         st.plotly_chart(fig2, use_container_width=True)
- 
+
     with col3:
         st.subheader("Leaderboard")
         lb = pd.DataFrame({n: {"Acc":f'{v["accuracy"]:.4f}',"AUC":f'{v["roc_auc"]:.4f}',
              "F1":f'{v["f1"]:.4f}',"CV":f'{v["cv_mean"]:.3f}±{v["cv_std"]:.3f}'}
              for n,v in res.items()}).T.sort_values("AUC",ascending=False)
         st.dataframe(lb, use_container_width=True, height=270)
- 
+
     st.markdown("---")
     st.subheader("Pipeline Summary")
     st.markdown(f"""
     <div class="info-box">
-    📐 <b>Preprocessing:</b> Log-transform ({", ".join(LOG_FEATS[:3])}…) - Age/Income/Delay re-binning - Label encoding - Median imputation - StandardScaler<br>
-    🔬 <b>Feature selection:</b> Mutual info - RF importance - RFECV - <b>{len(pipe["selected"])} features selected</b><br>
-    ⚖️ <b>SMOTE:</b> Balanced training set - {sum(pipe["smote_counts"].values()):,} samples<br>
+    📐 <b>Preprocessing:</b> Log-transform ({", ".join(LOG_FEATS[:3])}…) → Age/Income/Delay re-binning → Label encoding → Median imputation → StandardScaler<br>
+    🔬 <b>Feature selection:</b> Mutual info → RF importance → RFECV → <b>{len(pipe["selected"])} features selected</b><br>
+    ⚖️ <b>SMOTE:</b> Balanced training set → {sum(pipe["smote_counts"].values()):,} samples<br>
     🔧 <b>Optuna:</b> {st.session_state.get("n_trials",25)} trials · best CV AUC {pipe["study"].best_value:.4f}<br>
     🤖 <b>Models:</b> 9 base classifiers + Soft Voting + Stacking (meta: LR) · Best: <b>{bn}</b>
     </div>
     """, unsafe_allow_html=True)
     st.subheader("Data Preview")
     st.dataframe(df.head(100), use_container_width=True, height=240)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE: EDA
 # ─────────────────────────────────────────────────────────────────────────────
@@ -707,7 +693,7 @@ def page_eda(df):
     st.title("Exploratory Data Analysis")
     t1,t2,t3,t4,t5 = st.tabs(
         ["Distributions","Skewness & Linearisation","Categorical","Correlation","Missing Values"])
- 
+
     with t1:
         num_cols = df.select_dtypes(include=np.number).columns.drop("Credit_Score").tolist()
         sel = st.multiselect("Features", num_cols, default=num_cols[:6])
@@ -725,9 +711,9 @@ def page_eda(df):
                 for sp in ax.spines.values(): sp.set_edgecolor(BORDER)
             for ax in axes[len(sel):]: ax.set_visible(False)
             plt.tight_layout(); st.pyplot(fig); plt.close()
- 
+
     with t2:
-        st.subheader("Skewness - Before vs After Log Transform")
+        st.subheader("Skewness — Before vs After Log Transform")
         skew_df = df[num_cols].skew().sort_values(ascending=False)
         log_df  = df[num_cols].copy()
         for c in LOG_FEATS:
@@ -742,7 +728,7 @@ def page_eda(df):
             paper_bgcolor=DARK_BG, plot_bgcolor=CARD_BG, font=dict(color="#e8e8e8"),
             xaxis=dict(gridcolor=BORDER,tickangle=35), yaxis=dict(gridcolor=BORDER), height=380)
         st.plotly_chart(fig, use_container_width=True)
- 
+
     with t3:
         cat_cols = df.select_dtypes(include=object).columns.tolist()
         if cat_cols:
@@ -757,7 +743,7 @@ def page_eda(df):
                 font=dict(color="#e8e8e8"), height=380,
                 xaxis=dict(gridcolor=BORDER), yaxis=dict(gridcolor=BORDER))
             st.plotly_chart(fig2, use_container_width=True)
- 
+
     with t4:
         corr = df.select_dtypes(include=np.number).drop("Credit_Score",axis=1).corr()
         fig3,ax3 = plt.subplots(figsize=(14,11),facecolor=DARK_BG)
@@ -767,7 +753,7 @@ def page_eda(df):
             annot_kws={"size":7,"color":"#e8e8e8"})
         ax3.tick_params(colors="#888")
         plt.tight_layout(); st.pyplot(fig3); plt.close()
- 
+
     with t5:
         miss=(df.isnull().mean()*100).sort_values(ascending=False)
         miss=miss[miss>0]
@@ -780,8 +766,8 @@ def page_eda(df):
                 xaxis=dict(gridcolor=BORDER),yaxis=dict(gridcolor=BORDER))
             st.plotly_chart(fig4,use_container_width=True)
             st.dataframe(miss.rename("Missing %").round(2).to_frame(),use_container_width=True)
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE: MODELS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -791,9 +777,9 @@ def page_models(pipe):
     t1,t2,t3,t4,t5,t6 = st.tabs(
         ["Leaderboard","Confusion Matrices","ROC Curves",
          "Calibration","Optuna Study","RFECV & SHAP"])
- 
+
     with t1:
-        st.subheader("All Models - Full Metrics")
+        st.subheader("All Models — Full Metrics")
         lb = pd.DataFrame({n:{"Accuracy":round(v["accuracy"],4),"F1 Macro":round(v["f1"],4),
              "Precision":round(v["precision"],4),"Recall":round(v["recall"],4),
              "ROC-AUC":round(v["roc_auc"],4),
@@ -801,7 +787,7 @@ def page_models(pipe):
              for n,v in res.items()}).T.sort_values("ROC-AUC",ascending=False)
         st.dataframe(lb, use_container_width=True)
         st.markdown(f"**🏆 Best model:** `{bn}`  |  AUC = `{res[bn]['roc_auc']:.4f}`")
- 
+
         fig=go.Figure()
         names=list(lb.index)
         for metric,color in [("Accuracy","#4C72B0"),("F1 Macro","#55A868"),
@@ -812,21 +798,21 @@ def page_models(pipe):
             font=dict(color="#e8e8e8"), height=400, xaxis=dict(gridcolor=BORDER,tickangle=30),
             yaxis=dict(gridcolor=BORDER,range=[0,1.1]), legend=dict(font=dict(color="#e8e8e8")))
         st.plotly_chart(fig, use_container_width=True)
- 
+
     with t2:
         mc = st.selectbox("Model", list(res.keys()), index=list(res.keys()).index(bn))
         cm = confusion_matrix(pipe["y_te"], res[mc]["preds"])
         fig2,ax2 = plt.subplots(figsize=(6,5),facecolor=DARK_BG)
         ax2.set_facecolor(CARD_BG)
         ConfusionMatrixDisplay(cm,display_labels=CLASS_NAMES).plot(ax=ax2,colorbar=False,cmap="Blues")
-        ax2.set_title(f"{mc} - Acc: {res[mc]['accuracy']:.3f}",color="#e8e8e8")
+        ax2.set_title(f"{mc} — Acc: {res[mc]['accuracy']:.3f}",color="#e8e8e8")
         ax2.tick_params(colors="#888")
         for sp in ax2.spines.values(): sp.set_edgecolor(BORDER)
         plt.tight_layout(); st.pyplot(fig2); plt.close()
         st.code(classification_report(pipe["y_te"],res[mc]["preds"],target_names=CLASS_NAMES))
- 
+
     with t3:
-        st.subheader(f"ROC Curves - {bn}")
+        st.subheader(f"ROC Curves — {bn}")
         ybin = label_binarize(pipe["y_te"], classes=[0,1,2])
         fig3 = go.Figure()
         top5 = list(pd.DataFrame({n:{"auc":v["roc_auc"]} for n,v in res.items()}).T.sort_values("auc",ascending=False).head(5).index)
@@ -843,9 +829,9 @@ def page_models(pipe):
             xaxis=dict(gridcolor=BORDER),yaxis=dict(gridcolor=BORDER),
             legend=dict(font=dict(color="#e8e8e8",size=8),bgcolor=DARK_BG))
         st.plotly_chart(fig3, use_container_width=True)
- 
+
     with t4:
-        st.subheader(f"Calibration Curves - {bn}")
+        st.subheader(f"Calibration Curves — {bn}")
         ybin2 = label_binarize(pipe["y_te"],classes=[0,1,2])
         fig4,axes4 = plt.subplots(1,3,figsize=(15,5),facecolor=DARK_BG)
         for i,(ax,cn) in enumerate(zip(axes4,CLASS_NAMES)):
@@ -855,9 +841,9 @@ def page_models(pipe):
             ax.plot([0,1],[0,1],"k--",label="Perfect"); ax.legend(fontsize=7)
             ax.set_title(f"Class: {cn}",color="#e8e8e8"); ax.tick_params(colors="#888")
             for sp in ax.spines.values(): sp.set_edgecolor(BORDER)
-        plt.suptitle(f"Calibration - {bn}",color="#e8e8e8")
+        plt.suptitle(f"Calibration — {bn}",color="#e8e8e8")
         plt.tight_layout(); st.pyplot(fig4); plt.close()
- 
+
     with t5:
         st.subheader("Optuna Hyperparameter Search")
         study = pipe["study"]
@@ -885,7 +871,7 @@ def page_models(pipe):
                 xaxis=dict(gridcolor=BORDER),yaxis=dict(gridcolor=BORDER))
             st.plotly_chart(fig6,use_container_width=True)
         except Exception: pass
- 
+
     with t6:
         c1,c2=st.columns(2)
         with c1:
@@ -905,7 +891,7 @@ def page_models(pipe):
                 font=dict(color="#e8e8e8"),height=300,
                 xaxis=dict(gridcolor=BORDER),yaxis=dict(gridcolor=BORDER))
             st.plotly_chart(fig7,use_container_width=True)
- 
+
         with c2:
             st.subheader("SHAP Summary")
             xgb_mdl = pipe["base"].get("XGBoost (tuned)", pipe["base"].get("LightGBM"))
@@ -920,12 +906,12 @@ def page_models(pipe):
                     fig8,ax8=plt.subplots(figsize=(9,5),facecolor=DARK_BG)
                     ax8.set_facecolor(DARK_BG); plt.sca(ax8)
                     shap.summary_plot(sv,Xdf,plot_type="dot",max_display=14,show=False,color_bar=True)
-                    ax8.set_title(f"SHAP - {cls_c}",color="#e8e8e8"); ax8.tick_params(colors="#888")
+                    ax8.set_title(f"SHAP — {cls_c}",color="#e8e8e8"); ax8.tick_params(colors="#888")
                     plt.tight_layout(); st.pyplot(fig8); plt.close()
                 except Exception as e:
                     st.warning(f"SHAP unavailable: {e}")
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE: PREDICT
 # ─────────────────────────────────────────────────────────────────────────────
@@ -933,7 +919,7 @@ def page_predict(pipe):
     st.title("🔮 Live Credit Score Predictor")
     st.markdown("Enter financial details for an instant prediction with full visual analysis and PDF report.")
     st.markdown("---")
- 
+
     ca,cb,cc = st.columns(3)
     with ca:
         st.markdown("**Personal & Account**")
@@ -962,11 +948,11 @@ def page_predict(pipe):
         pma      = st.selectbox("Pays Min Amount?", ["Yes","No","NM"])
         nci      = st.slider("Credit Inquiries", 0, 17, 3)
         ccl      = st.slider("Changed Credit Limit (%)", 0.0, 30.0, 5.0, 0.5)
- 
+
     st.markdown("---")
     if not st.button("🔮  Predict My Credit Score", use_container_width=False):
         return
- 
+
     inp = {"Age":age,"Occupation":occ,"Annual_Income":ai,"Monthly_Inhand_Salary":ai/12,
            "Num_Bank_Accounts":nba,"Num_Credit_Card":ncc,"Interest_Rate":ir,
            "Num_of_Loan":nl,"Delay_from_due_date":dfd,"Num_of_Delayed_Payment":ndp,
@@ -974,7 +960,7 @@ def page_predict(pipe):
            "Outstanding_Debt":od,"Credit_Utilization_Ratio":cu,"Credit_History_Age":cha,
            "Payment_of_Min_Amount":pma,"Total_EMI_per_month":emi,
            "Amount_invested_monthly":inv,"Monthly_Balance":bal}
- 
+
     # Preprocess single row
     raw = pd.DataFrame([inp])
     raw = linearise(raw)
@@ -1001,7 +987,7 @@ def page_predict(pipe):
     for c in sel:
         if c not in raw_sel_df.columns: raw_sel_df[c] = 0
     raw_final = raw_sel_df[sel].values
- 
+
     best_mdl = pipe["results"][pipe["best_name"]]["model"]
     pred     = int(best_mdl.predict(raw_final)[0])
     proba    = best_mdl.predict_proba(raw_final)[0]
@@ -1009,7 +995,7 @@ def page_predict(pipe):
     lo, hi   = expected_range(ai)
     label    = CLASS_NAMES[pred]
     badge    = {"Poor":"badge-poor","Standard":"badge-standard","Good":"badge-good"}[label]
- 
+
     # ── Row 1: badge + gauge + radar ─────────────────────────────────────────
     r1,r2,r3 = st.columns([1,2,2])
     with r1:
@@ -1029,7 +1015,7 @@ def page_predict(pipe):
         st.markdown("### Risk Radar")
         st.plotly_chart(radar(radar_dims({**inp,"Credit_Mix":cm,
                                           "Monthly_Inhand_Salary":ai/12})), use_container_width=True)
- 
+
     st.markdown("---")
     # ── Row 2: deviation + SHAP ──────────────────────────────────────────────
     d1,d2 = st.columns(2)
@@ -1046,41 +1032,41 @@ def page_predict(pipe):
         🟢 Green = closer to <b>Good</b> class average &nbsp;|&nbsp;
         🔴 Red = further from <b>Good</b> class average</div>""", unsafe_allow_html=True)
     with d2:
-        st.markdown("### SHAP - Why this prediction?")
+        st.markdown("### SHAP — Why this prediction?")
         xgb_mdl = pipe["base"].get("XGBoost (tuned)", pipe["base"].get("LightGBM"))
         wfig = shap_waterfall(xgb_mdl, raw_final, sel, pred)
         if wfig: st.plotly_chart(wfig, use_container_width=True)
         else:    st.info("SHAP waterfall unavailable for this model.")
- 
+
     st.markdown("---")
     # ── Tips ─────────────────────────────────────────────────────────────────
     st.markdown("### 💡 Personalised Insights")
     tips = []
     if dfd > 20:
-        tips.append("⚠️ **High payment delays** - paying on or before due date is the single biggest positive action.")
+        tips.append("⚠️ **High payment delays** — paying on or before due date is the single biggest positive action.")
     if od/(ai+1) > 0.3:
-        tips.append("⚠️ **Elevated debt-to-income ratio** - reducing outstanding debt will directly improve your score.")
+        tips.append("⚠️ **Elevated debt-to-income ratio** — reducing outstanding debt will directly improve your score.")
     if cu > 40:
-        tips.append("⚠️ **Credit utilisation above 40%** - aim to keep it below 30% of your credit limit.")
+        tips.append("⚠️ **Credit utilisation above 40%** — aim to keep it below 30% of your credit limit.")
     if cha < 3:
-        tips.append("💡 **Short credit history** - maintaining existing accounts for longer builds a stronger track record.")
+        tips.append("💡 **Short credit history** — maintaining existing accounts for longer builds a stronger track record.")
     if cm == "Bad":
-        tips.append("💡 **Poor credit mix** - having a diverse combination of credit types signals lower risk to lenders.")
+        tips.append("💡 **Poor credit mix** — having a diverse combination of credit types signals lower risk to lenders.")
     if ndp > 10:
-        tips.append("⚠️ **Many delayed payments on record** - set up automatic payments to prevent future delays.")
+        tips.append("⚠️ **Many delayed payments on record** — set up automatic payments to prevent future delays.")
     if nci > 8:
-        tips.append("⚠️ **High credit inquiry count** - multiple recent inquiries signal credit-seeking behaviour to lenders.")
+        tips.append("⚠️ **High credit inquiry count** — multiple recent inquiries signal credit-seeking behaviour to lenders.")
     if score >= hi:
-        tips.append(f"✅ **Above expected range ({lo}–{hi}) for your income bracket** - excellent financial discipline!")
+        tips.append(f"✅ **Above expected range ({lo}–{hi}) for your income bracket** — excellent financial discipline!")
     elif score < lo:
-        tips.append(f"💡 **Below expected range ({lo}–{hi}) for your income bracket** - focus on the items flagged above.")
+        tips.append(f"💡 **Below expected range ({lo}–{hi}) for your income bracket** — focus on the items flagged above.")
     if not tips:
         tips.append("✅ Your credit profile looks strong. Maintain consistent payment habits to stay here.")
- 
+
     for tip in tips:
         cls = "warn-box" if "⚠️" in tip else "good-box" if "✅" in tip else "info-box"
         st.markdown(f'<div class="{cls}">{tip}</div>', unsafe_allow_html=True)
- 
+
     st.markdown("---")
     # ── PDF Export ───────────────────────────────────────────────────────────
     st.markdown("### 📄 Export Report")
@@ -1091,27 +1077,27 @@ def page_predict(pipe):
     st.download_button("⬇️  Download PDF Report", data=pdf_bytes,
         file_name=f"creditiq_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
         mime="application/pdf")
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
     if not st.session_state.get("authenticated"):
         login_page(); return
- 
+
     page = sidebar()
     df   = st.session_state.get("df_uploaded", generate_dataset())
     key  = hashlib.md5(str(df.shape).encode() + str(df.iloc[0].values).encode()).hexdigest()
     n_t  = st.session_state.get("n_trials", 25)
- 
-    with st.spinner("🔧 Running ML pipeline - SMOTE · RFECV · Optuna · 11 models (cached after first run)…"):
+
+    with st.spinner("🔧 Running ML pipeline — SMOTE · RFECV · Optuna · 11 models (cached after first run)…"):
         pipe = run_pipeline(df, key, n_t)
- 
+
     if   page == "🏠 Overview":      page_overview(df, pipe)
     elif page == "📊 EDA":           page_eda(df)
     elif page == "🤖 Models":        page_models(pipe)
     elif page == "🔮 Predict Score": page_predict(pipe)
- 
+
 if __name__ == "__main__":
     main()
