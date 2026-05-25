@@ -1,16 +1,109 @@
-· GITIGNORE
+# ─────────────────────────────────────────────────────────────────────────────
+# CreditIQ — .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Python 
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 *.pyo
-.env
+*.pyd
+.Python
+
+# Virtual environments 
 venv/
 .venv/
-*.egg-info/
-dist/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging 
 build/
-.DS_Store
+dist/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+
+# Jupyter notebooks 
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+*.ipynb_checkpoints
+
+# Data files (keep synthetic generator; never commit real customer data)
 train.csv
+test.csv
 *.xlsx
+*.xls
+data/raw/
+data/processed/
+*.parquet
+*.feather
+
+# Model artefacts 
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.pt
+*.pth
+models/
+saved_models/
+mlruns/
+optuna_storage/
+*.db
+
+# Report outputs 
 *.pdf
+reports/generated/
+
+# Streamlit 
 .streamlit/secrets.toml
- 
+
+# Environment / secrets
+.env
+.env.*
+*.env
+secrets.toml
+config.local.yaml
+
+# OS artefacts 
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# Testing & coverage 
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Logs 
+*.log
+logs/
+log/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
