@@ -1,0 +1,9 @@
+Create this file at: .streamlit/config.toml in your repo root
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false

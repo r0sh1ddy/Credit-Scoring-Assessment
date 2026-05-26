@@ -1,6 +1,6 @@
 """ 
 CreditIQ — Production Streamlit App
-Features: Auth · CSV Upload · Linearisation · Normalisation · Re-binning ·
+Features: CSV Upload · Linearisation · Normalisation · Re-binning ·
           RFECV · SMOTE · Optuna · 9 Models · Voting · Stacking ·
           Gauge · Radar · Deviation · SHAP Waterfall · PDF Export
 Run: streamlit run app.py
@@ -9,7 +9,7 @@ Run: streamlit run app.py
 # ─────────────────────────────────────────────────────────────────────────────
 # IMPORTS
 # ─────────────────────────────────────────────────────────────────────────────
-import io, hashlib, warnings, tempfile, os, math
+import io, hashlib, warnings, tempfile, os, math  # hashlib kept for cache key only
 from datetime import datetime
 
 warnings.filterwarnings("ignore")
@@ -101,39 +101,7 @@ hr { border-color:#2a2f3e !important; }
 """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# AUTH
-# ─────────────────────────────────────────────────────────────────────────────
-def _h(pw): return hashlib.sha256(pw.encode()).hexdigest()
 
-USERS = {
-    "admin":   {"hash": _h("admin123"),   "name": "Admin",          "role": "admin"},
-    "analyst": {"hash": _h("analyst123"), "name": "Credit Analyst", "role": "analyst"},
-    "demo":    {"hash": _h("demo"),       "name": "Demo User",      "role": "viewer"},
-}
-
-def login_page():
-    _, col, _ = st.columns([1, 1.1, 1])
-    with col:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown("## 💳 CreditIQ")
-        st.markdown("**Credit Score Analysis Platform**")
-        st.markdown("---")
-        username = st.text_input("Username", placeholder="admin / analyst / demo")
-        password = st.text_input("Password", type="password")
-        if st.button("Sign In", use_container_width=True):
-            u = USERS.get(username)
-            if u and u["hash"] == _h(password):
-                for k, v in [("authenticated", True), ("username", username),
-                              ("user_name", u["name"]), ("user_role", u["role"])]:
-                    st.session_state[k] = v
-                st.rerun()
-            else:
-                st.error("Invalid credentials.")
-        st.markdown("""<div class="info-box"><b>Demo Credentials</b><br>
-        👤 <code>admin</code> / <code>admin123</code><br>
-        👤 <code>analyst</code> / <code>analyst123</code><br>
-        👤 <code>demo</code> / <code>demo</code></div>""", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -591,8 +559,7 @@ def build_pdf(inputs, score, lo, hi, label, proba, tips, radar_sc, user_fe, good
 def sidebar():
     with st.sidebar:
         st.markdown("## 💳 CreditIQ")
-        st.caption(f"**{st.session_state.get('user_name','—')}** "
-                   f"({st.session_state.get('user_role','—')})")
+        st.markdown("**Credit Score Analysis Platform**")
         st.markdown("---")
         page = st.radio("Navigate",
             ["🏠 Overview","📊 EDA","🤖 Models","🔮 Predict Score"],
@@ -613,10 +580,6 @@ def sidebar():
         n_trials = st.slider("Optuna trials", 10, 60, 25, 5)
         st.session_state["n_trials"] = n_trials
         st.markdown("---")
-        if st.button("🚪 Sign Out"):
-            for k in ["authenticated","username","user_name","user_role","df_uploaded"]:
-                st.session_state.pop(k, None)
-            st.rerun()
         st.caption("XGBoost · LightGBM · SMOTE · RFECV · Optuna · SHAP")
     return page
 
@@ -1083,9 +1046,6 @@ def page_predict(pipe):
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
-    if not st.session_state.get("authenticated"):
-        login_page(); return
-
     page = sidebar()
     df   = st.session_state.get("df_uploaded", generate_dataset())
     key  = hashlib.md5(str(df.shape).encode() + str(df.iloc[0].values).encode()).hexdigest()

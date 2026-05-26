@@ -1,17 +1,17 @@
 # CreditIQ — Streamlit Cloud requirements
-# Ordered: lightest → heaviest to fail fast on bad installs
- 
-streamlit
-numpy
-pandas
-scipy
-matplotlib
-seaborn
-plotly
-scikit-learn
-imbalanced-learn
-optuna
-xgboost
-lightgbm
-shap
-fpdf2
+# Pinned for reproducibility and faster cold-start installs
+
+streamlit>=1.32.0
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.18.0
+scikit-learn>=1.4.0
+imbalanced-learn>=0.11.0
+optuna>=3.5.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+shap>=0.44.0
+fpdf2>=2.7.0
