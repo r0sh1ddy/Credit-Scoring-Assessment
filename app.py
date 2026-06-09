@@ -173,7 +173,7 @@ def rebin(df):
     df = df.copy()
     df["Age_Group"] = pd.cut(df["Age"], bins=[17,25,35,45,60,75],
         labels=["18-25","26-35","36-45","46-60","61-75"]).astype(str)
-    inc = np.expm1(df["Annual_Income"]) if df["Annual_Income"].max()<30 else df["Annual_Income"]
+    inc = np.expm1(df["Annual_Income"].astype(float)) if df["Annual_Income"].max()<30 else df["Annual_Income"].astype(float)
     df["Income_Bracket"] = pd.cut(inc, bins=[0,30000,70000,120000,1e9],
         labels=["Low","Medium","High","Very_High"]).astype(str)
     df["Delay_Bucket"] = pd.cut(df["Delay_from_due_date"].fillna(0),
