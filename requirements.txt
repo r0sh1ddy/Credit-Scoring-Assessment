@@ -27,3 +27,6 @@ pyarrow==18.1.0
 
 # Reporting
 fpdf2==2.8.2
+
+
+optuna==4.0.0
